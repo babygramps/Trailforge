@@ -1,0 +1,37 @@
+{
+  "options": {
+    "paths": {
+      "root": "/app",
+      "fonts": "/app/fonts",
+      "styles": "/app/styles",
+      "mbtiles": "/app/data"
+    },
+    "serveAllFonts": true,
+    "listenPort": 8081
+  },
+  "styles": {
+    "topo": {
+      "style": "topo.json",
+      "tilejson": {
+        "bounds": [-180, -85.05, 180, 85.05]
+      }
+    },
+    "satellite-hybrid": {
+      "style": "satellite-hybrid.json",
+      "tilejson": {
+        "bounds": [-180, -85.05, 180, 85.05]
+      }
+    }
+  },
+  "data": {
+    "openmaptiles": {
+      "mbtiles": "openmaptiles.mbtiles"
+    },
+    "contours": {
+      "mbtiles": "contours.mbtiles"
+    },
+    "hillshade": {
+      "mbtiles": "hillshade.mbtiles"
+    }
+  }
+}

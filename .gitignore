@@ -1,0 +1,53 @@
+# Dependencies
+node_modules/
+vendor/
+
+# Build outputs
+web/dist/
+api/bin/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Tile data (large files, download separately)
+tiles/data/*.mbtiles
+tiles/data/*.pmtiles
+
+# Valhalla routing tiles
+valhalla/custom_files/
+valhalla/valhalla_tiles/
+
+# Database data
+db-data/
+
+# Logs
+*.log
+
+# Go
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+coverage.txt
+
+# TypeScript
+*.tsbuildinfo
+
+# PWA
+web/public/sw.js.map

@@ -1,0 +1,581 @@
+{
+  "version": 8,
+  "name": "TrailForge Satellite Hybrid",
+  "metadata": {
+    "mapbox:autocomposite": false,
+    "openmaptiles:version": "3.x"
+  },
+  "glyphs": "http://localhost:8081/fonts/{fontstack}/{range}.pbf",
+  "sprite": "http://localhost:8081/styles/satellite-hybrid/sprite",
+  "sources": {
+    "satellite": {
+      "type": "raster",
+      "tiles": [
+        "http://localhost:8080/api/tiles/satellite/{z}/{x}/{y}.jpg"
+      ],
+      "tileSize": 256,
+      "maxzoom": 19,
+      "attribution": "Satellite imagery"
+    },
+    "openmaptiles": {
+      "type": "vector",
+      "url": "http://localhost:8081/data/openmaptiles.json"
+    },
+    "contours": {
+      "type": "vector",
+      "url": "http://localhost:8081/data/contours.json"
+    }
+  },
+  "layers": [
+    {
+      "id": "background",
+      "type": "background",
+      "paint": {
+        "background-color": "#0a0a0a"
+      }
+    },
+    {
+      "id": "satellite-raster",
+      "type": "raster",
+      "source": "satellite",
+      "paint": {
+        "raster-brightness-min": 0.05,
+        "raster-brightness-max": 0.95,
+        "raster-contrast": 0.1,
+        "raster-saturation": 0.1
+      }
+    },
+    {
+      "id": "contour-line-overlay",
+      "type": "line",
+      "source": "contours",
+      "source-layer": "contour",
+      "minzoom": 12,
+      "filter": ["!=", ["get", "nth_line"], 5],
+      "paint": {
+        "line-color": "rgba(255, 200, 140, 0.3)",
+        "line-width": {
+          "stops": [
+            [12, 0.3],
+            [16, 0.6]
+          ]
+        }
+      }
+    },
+    {
+      "id": "contour-line-index-overlay",
+      "type": "line",
+      "source": "contours",
+      "source-layer": "contour",
+      "minzoom": 12,
+      "filter": ["==", ["get", "nth_line"], 5],
+      "paint": {
+        "line-color": "rgba(255, 200, 140, 0.5)",
+        "line-width": {
+          "stops": [
+            [12, 0.5],
+            [16, 1]
+          ]
+        }
+      }
+    },
+    {
+      "id": "contour-label-overlay",
+      "type": "symbol",
+      "source": "contours",
+      "source-layer": "contour",
+      "minzoom": 14,
+      "filter": ["==", ["get", "nth_line"], 5],
+      "layout": {
+        "symbol-placement": "line",
+        "text-field": "{height}",
+        "text-font": ["Noto Sans Regular"],
+        "text-size": {
+          "stops": [
+            [14, 9],
+            [16, 10]
+          ]
+        },
+        "text-rotation-alignment": "map",
+        "text-max-angle": 25
+      },
+      "paint": {
+        "text-color": "rgba(255, 220, 170, 0.8)",
+        "text-halo-color": "rgba(0, 0, 0, 0.6)",
+        "text-halo-width": 1.5
+      }
+    },
+    {
+      "id": "water-overlay",
+      "type": "fill",
+      "source": "openmaptiles",
+      "source-layer": "water",
+      "paint": {
+        "fill-color": "rgba(80, 150, 220, 0.25)",
+        "fill-outline-color": "rgba(100, 170, 240, 0.4)"
+      }
+    },
+    {
+      "id": "waterway-overlay",
+      "type": "line",
+      "source": "openmaptiles",
+      "source-layer": "waterway",
+      "filter": ["in", "class", "river", "stream", "canal"],
+      "minzoom": 9,
+      "paint": {
+        "line-color": "rgba(100, 170, 240, 0.4)",
+        "line-width": {
+          "stops": [
+            [9, 0.5],
+            [14, 2]
+          ]
+        }
+      }
+    },
+    {
+      "id": "boundary-state-overlay",
+      "type": "line",
+      "source": "openmaptiles",
+      "source-layer": "boundary",
+      "filter": ["==", "admin_level", 4],
+      "minzoom": 4,
+      "paint": {
+        "line-color": "rgba(200, 200, 220, 0.5)",
+        "line-width": {
+          "stops": [
+            [4, 0.5],
+            [10, 1.5]
+          ]
+        },
+        "line-dasharray": [5, 3]
+      }
+    },
+    {
+      "id": "boundary-country-overlay",
+      "type": "line",
+      "source": "openmaptiles",
+      "source-layer": "boundary",
+      "filter": ["==", "admin_level", 2],
+      "paint": {
+        "line-color": "rgba(220, 220, 240, 0.6)",
+        "line-width": {
+          "stops": [
+            [2, 0.5],
+            [6, 1.5],
+            [10, 2]
+          ]
+        }
+      }
+    },
+    {
+      "id": "road-motorway-overlay",
+      "type": "line",
+      "source": "openmaptiles",
+      "source-layer": "transportation",
+      "filter": [
+        "all",
+        ["!has", "brunnel"],
+        ["in", "class", "motorway", "trunk"]
+      ],
+      "minzoom": 6,
+      "layout": {
+        "line-join": "round",
+        "line-cap": "round"
+      },
+      "paint": {
+        "line-color": "rgba(255, 200, 100, 0.7)",
+        "line-width": {
+          "stops": [
+            [6, 0.5],
+            [10, 1.5],
+            [14, 3],
+            [18, 8]
+          ]
+        }
+      }
+    },
+    {
+      "id": "road-primary-overlay",
+      "type": "line",
+      "source": "openmaptiles",
+      "source-layer": "transportation",
+      "filter": [
+        "all",
+        ["!has", "brunnel"],
+        ["==", "class", "primary"]
+      ],
+      "minzoom": 8,
+      "layout": {
+        "line-join": "round",
+        "line-cap": "round"
+      },
+      "paint": {
+        "line-color": "rgba(255, 220, 140, 0.6)",
+        "line-width": {
+          "stops": [
+            [8, 0.3],
+            [10, 1],
+            [14, 2.5],
+            [18, 6]
+          ]
+        }
+      }
+    },
+    {
+      "id": "road-secondary-overlay",
+      "type": "line",
+      "source": "openmaptiles",
+      "source-layer": "transportation",
+      "filter": [
+        "all",
+        ["!has", "brunnel"],
+        ["in", "class", "secondary", "tertiary"]
+      ],
+      "minzoom": 10,
+      "layout": {
+        "line-join": "round",
+        "line-cap": "round"
+      },
+      "paint": {
+        "line-color": "rgba(255, 255, 255, 0.5)",
+        "line-width": {
+          "stops": [
+            [10, 0.3],
+            [14, 1.5],
+            [18, 4]
+          ]
+        }
+      }
+    },
+    {
+      "id": "road-minor-overlay",
+      "type": "line",
+      "source": "openmaptiles",
+      "source-layer": "transportation",
+      "filter": [
+        "all",
+        ["!has", "brunnel"],
+        ["in", "class", "minor", "service"]
+      ],
+      "minzoom": 12,
+      "layout": {
+        "line-join": "round",
+        "line-cap": "round"
+      },
+      "paint": {
+        "line-color": "rgba(255, 255, 255, 0.35)",
+        "line-width": {
+          "stops": [
+            [12, 0.3],
+            [14, 0.8],
+            [18, 2.5]
+          ]
+        }
+      }
+    },
+    {
+      "id": "trail-track-overlay",
+      "type": "line",
+      "source": "openmaptiles",
+      "source-layer": "transportation",
+      "filter": ["==", "class", "track"],
+      "minzoom": 10,
+      "layout": {
+        "line-join": "round",
+        "line-cap": "round"
+      },
+      "paint": {
+        "line-color": "rgba(255, 180, 80, 0.8)",
+        "line-width": {
+          "stops": [
+            [10, 0.5],
+            [13, 1.2],
+            [16, 2.5],
+            [18, 4]
+          ]
+        },
+        "line-dasharray": [4, 2]
+      }
+    },
+    {
+      "id": "trail-path-overlay-glow",
+      "type": "line",
+      "source": "openmaptiles",
+      "source-layer": "transportation",
+      "filter": ["==", "class", "path"],
+      "minzoom": 10,
+      "layout": {
+        "line-join": "round",
+        "line-cap": "round"
+      },
+      "paint": {
+        "line-color": "rgba(255, 60, 60, 0.2)",
+        "line-width": {
+          "stops": [
+            [10, 3],
+            [14, 6],
+            [18, 10]
+          ]
+        }
+      }
+    },
+    {
+      "id": "trail-path-overlay",
+      "type": "line",
+      "source": "openmaptiles",
+      "source-layer": "transportation",
+      "filter": ["==", "class", "path"],
+      "minzoom": 10,
+      "layout": {
+        "line-join": "round",
+        "line-cap": "round"
+      },
+      "paint": {
+        "line-color": "rgba(255, 80, 80, 0.9)",
+        "line-width": {
+          "stops": [
+            [10, 0.8],
+            [13, 1.8],
+            [16, 3],
+            [18, 5]
+          ]
+        },
+        "line-dasharray": [3, 1.5]
+      }
+    },
+    {
+      "id": "trail-bicycle-overlay",
+      "type": "line",
+      "source": "openmaptiles",
+      "source-layer": "transportation",
+      "filter": [
+        "all",
+        ["in", "class", "path", "track"],
+        ["==", "subclass", "cycleway"]
+      ],
+      "minzoom": 10,
+      "layout": {
+        "line-join": "round",
+        "line-cap": "round"
+      },
+      "paint": {
+        "line-color": "rgba(80, 160, 255, 0.9)",
+        "line-width": {
+          "stops": [
+            [10, 0.8],
+            [13, 1.8],
+            [16, 3],
+            [18, 5]
+          ]
+        },
+        "line-dasharray": [2, 1.5]
+      }
+    },
+    {
+      "id": "road-label-major-overlay",
+      "type": "symbol",
+      "source": "openmaptiles",
+      "source-layer": "transportation_name",
+      "filter": ["in", "class", "motorway", "trunk", "primary"],
+      "minzoom": 11,
+      "layout": {
+        "symbol-placement": "line",
+        "text-field": "{name:latin}",
+        "text-font": ["Noto Sans Regular"],
+        "text-size": {
+          "stops": [
+            [11, 9],
+            [14, 12]
+          ]
+        },
+        "text-rotation-alignment": "map",
+        "text-max-angle": 30
+      },
+      "paint": {
+        "text-color": "rgba(255, 255, 255, 0.9)",
+        "text-halo-color": "rgba(0, 0, 0, 0.7)",
+        "text-halo-width": 1.5
+      }
+    },
+    {
+      "id": "trail-label-overlay",
+      "type": "symbol",
+      "source": "openmaptiles",
+      "source-layer": "transportation_name",
+      "filter": ["in", "class", "path", "track"],
+      "minzoom": 13,
+      "layout": {
+        "symbol-placement": "line",
+        "text-field": "{name:latin}",
+        "text-font": ["Noto Sans Bold"],
+        "text-size": {
+          "stops": [
+            [13, 10],
+            [16, 13],
+            [18, 15]
+          ]
+        },
+        "text-rotation-alignment": "map",
+        "text-max-angle": 25,
+        "text-letter-spacing": 0.05
+      },
+      "paint": {
+        "text-color": "rgba(255, 220, 180, 1)",
+        "text-halo-color": "rgba(0, 0, 0, 0.8)",
+        "text-halo-width": 2
+      }
+    },
+    {
+      "id": "water-name-overlay",
+      "type": "symbol",
+      "source": "openmaptiles",
+      "source-layer": "water_name",
+      "minzoom": 6,
+      "layout": {
+        "text-field": "{name:latin}",
+        "text-font": ["Noto Sans Italic"],
+        "text-size": {
+          "stops": [
+            [6, 10],
+            [10, 13],
+            [14, 16]
+          ]
+        },
+        "text-max-width": 8
+      },
+      "paint": {
+        "text-color": "rgba(140, 200, 255, 0.9)",
+        "text-halo-color": "rgba(0, 0, 0, 0.6)",
+        "text-halo-width": 1.5
+      }
+    },
+    {
+      "id": "place-village-overlay",
+      "type": "symbol",
+      "source": "openmaptiles",
+      "source-layer": "place",
+      "filter": ["==", "class", "village"],
+      "minzoom": 10,
+      "layout": {
+        "text-field": "{name:latin}",
+        "text-font": ["Noto Sans Regular"],
+        "text-size": {
+          "stops": [
+            [10, 10],
+            [14, 13]
+          ]
+        },
+        "text-max-width": 8
+      },
+      "paint": {
+        "text-color": "rgba(255, 255, 255, 0.9)",
+        "text-halo-color": "rgba(0, 0, 0, 0.7)",
+        "text-halo-width": 1.5
+      }
+    },
+    {
+      "id": "place-town-overlay",
+      "type": "symbol",
+      "source": "openmaptiles",
+      "source-layer": "place",
+      "filter": ["==", "class", "town"],
+      "minzoom": 7,
+      "layout": {
+        "text-field": "{name:latin}",
+        "text-font": ["Noto Sans Regular"],
+        "text-size": {
+          "stops": [
+            [7, 10],
+            [10, 13],
+            [14, 16]
+          ]
+        },
+        "text-max-width": 8
+      },
+      "paint": {
+        "text-color": "rgba(255, 255, 255, 0.9)",
+        "text-halo-color": "rgba(0, 0, 0, 0.7)",
+        "text-halo-width": 2
+      }
+    },
+    {
+      "id": "place-city-overlay",
+      "type": "symbol",
+      "source": "openmaptiles",
+      "source-layer": "place",
+      "filter": ["==", "class", "city"],
+      "minzoom": 4,
+      "layout": {
+        "text-field": "{name:latin}",
+        "text-font": ["Noto Sans Bold"],
+        "text-size": {
+          "stops": [
+            [4, 11],
+            [8, 15],
+            [12, 20]
+          ]
+        },
+        "text-max-width": 8
+      },
+      "paint": {
+        "text-color": "rgba(255, 255, 255, 0.95)",
+        "text-halo-color": "rgba(0, 0, 0, 0.8)",
+        "text-halo-width": 2
+      }
+    },
+    {
+      "id": "place-country-overlay",
+      "type": "symbol",
+      "source": "openmaptiles",
+      "source-layer": "place",
+      "filter": ["==", "class", "country"],
+      "minzoom": 2,
+      "maxzoom": 7,
+      "layout": {
+        "text-field": "{name:latin}",
+        "text-font": ["Noto Sans Bold"],
+        "text-size": {
+          "stops": [
+            [2, 10],
+            [4, 14],
+            [6, 18]
+          ]
+        },
+        "text-transform": "uppercase",
+        "text-letter-spacing": 0.2,
+        "text-max-width": 8
+      },
+      "paint": {
+        "text-color": "rgba(255, 255, 255, 0.85)",
+        "text-halo-color": "rgba(0, 0, 0, 0.7)",
+        "text-halo-width": 2
+      }
+    },
+    {
+      "id": "mountain-peak-overlay",
+      "type": "symbol",
+      "source": "openmaptiles",
+      "source-layer": "mountain_peak",
+      "minzoom": 10,
+      "layout": {
+        "text-field": "{name:latin}\n{ele} m",
+        "text-font": ["Noto Sans Regular"],
+        "text-size": {
+          "stops": [
+            [10, 9],
+            [14, 11]
+          ]
+        },
+        "text-anchor": "top",
+        "text-offset": [0, 0.3],
+        "icon-image": "mountain_peak",
+        "icon-size": 0.8
+      },
+      "paint": {
+        "text-color": "rgba(255, 230, 200, 0.9)",
+        "text-halo-color": "rgba(0, 0, 0, 0.7)",
+        "text-halo-width": 1.5
+      }
+    }
+  ]
+}

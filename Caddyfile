@@ -1,0 +1,37 @@
+{$DOMAIN:localhost} {
+	# API
+	handle /api/* {
+		reverse_proxy trailforge-api:8080
+	}
+
+	# WebSocket (Caddy handles upgrade natively)
+	handle /ws/* {
+		reverse_proxy trailforge-api:8080
+	}
+
+	# Tile server
+	handle /tiles/* {
+		uri strip_prefix /tiles
+		reverse_proxy trailforge-tiles:8081
+	}
+
+	# Valhalla routing engine
+	handle /route/* {
+		uri strip_prefix /route
+		reverse_proxy trailforge-valhalla:8002
+	}
+
+	# Frontend (static files served by Caddy)
+	handle {
+		root * /srv/web
+		try_files {path} /index.html
+		file_server
+	}
+
+	# Security headers
+	header {
+		X-Content-Type-Options nosniff
+		X-Frame-Options DENY
+		Referrer-Policy strict-origin-when-cross-origin
+	}
+}
