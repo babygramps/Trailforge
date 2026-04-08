@@ -85,6 +85,18 @@ func main() {
 	wsHub := handler.NewWSHub()
 	wsHub.Register(e.Group("/ws"))
 
+	// ---- static frontend (SPA) ----
+	// Serve the pre-built React app when the dist directory exists.
+	if _, err := os.Stat("/srv/web/index.html"); err == nil {
+		e.Use(echomw.StaticWithConfig(echomw.StaticConfig{
+			Root:   "/srv/web",
+			Index:  "index.html",
+			HTML5:  true, // SPA fallback: serves index.html for unmatched routes
+			Browse: false,
+		}))
+		log.Println("serving frontend from /srv/web")
+	}
+
 	// ---- graceful shutdown ----
 	addr := fmt.Sprintf(":%s", cfg.APIPort)
 	go func() {
