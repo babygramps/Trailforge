@@ -32,16 +32,29 @@ type PositionUpdate struct {
 	Timestamp int64   `json:"timestamp"`
 }
 
+// wsClient wraps a WebSocket connection with a write mutex to prevent
+// concurrent writes, which gorilla/websocket does not support.
+type wsClient struct {
+	conn *websocket.Conn
+	wmu  sync.Mutex
+}
+
+func (c *wsClient) writeMessage(messageType int, data []byte) error {
+	c.wmu.Lock()
+	defer c.wmu.Unlock()
+	return c.conn.WriteMessage(messageType, data)
+}
+
 // WSHub manages connected WebSocket clients and broadcasts position updates.
 type WSHub struct {
 	mu      sync.RWMutex
-	clients map[string]*websocket.Conn // keyed by user ID
+	clients map[string]*wsClient // keyed by user ID
 }
 
 // NewWSHub creates a new WebSocket hub.
 func NewWSHub() *WSHub {
 	return &WSHub{
-		clients: make(map[string]*websocket.Conn),
+		clients: make(map[string]*wsClient),
 	}
 }
 
@@ -69,8 +82,9 @@ func (hub *WSHub) HandleWS(c echo.Context) error {
 		return err
 	}
 
-	hub.addClient(userID, conn)
-	defer hub.removeClient(userID, conn)
+	client := &wsClient{conn: conn}
+	hub.addClient(userID, client)
+	defer hub.removeClient(userID, client)
 
 	for {
 		_, msg, err := conn.ReadMessage()
@@ -95,27 +109,27 @@ func (hub *WSHub) HandleWS(c echo.Context) error {
 }
 
 // addClient registers a WebSocket connection for a user.
-func (hub *WSHub) addClient(userID string, conn *websocket.Conn) {
+func (hub *WSHub) addClient(userID string, client *wsClient) {
 	hub.mu.Lock()
 	defer hub.mu.Unlock()
 
 	// Close any existing connection for the same user.
 	if existing, ok := hub.clients[userID]; ok {
-		existing.Close()
+		existing.conn.Close()
 	}
-	hub.clients[userID] = conn
+	hub.clients[userID] = client
 }
 
 // removeClient unregisters and closes a WebSocket connection.
-func (hub *WSHub) removeClient(userID string, conn *websocket.Conn) {
+func (hub *WSHub) removeClient(userID string, client *wsClient) {
 	hub.mu.Lock()
 	defer hub.mu.Unlock()
 
 	// Only remove if it's the same connection (could have been replaced).
-	if existing, ok := hub.clients[userID]; ok && existing == conn {
+	if existing, ok := hub.clients[userID]; ok && existing == client {
 		delete(hub.clients, userID)
 	}
-	conn.Close()
+	client.conn.Close()
 }
 
 // broadcast sends a position update to all connected clients except the sender.
@@ -128,11 +142,11 @@ func (hub *WSHub) broadcast(senderID string, update PositionUpdate) {
 	hub.mu.RLock()
 	defer hub.mu.RUnlock()
 
-	for uid, conn := range hub.clients {
+	for uid, client := range hub.clients {
 		if uid == senderID {
 			continue
 		}
-		if err := conn.WriteMessage(websocket.TextMessage, data); err != nil {
+		if err := client.writeMessage(websocket.TextMessage, data); err != nil {
 			log.Printf("websocket write error for user %s: %v", uid, err)
 		}
 	}
