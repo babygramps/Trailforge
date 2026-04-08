@@ -24,15 +24,15 @@ describe('mapStore', () => {
   });
 
   it('toggleLayerVisibility flips visible flag', () => {
-    // "satellite" starts as visible: false
-    useMapStore.getState().toggleLayerVisibility('satellite');
-    const layer = useMapStore.getState().layers.find((l) => l.id === 'satellite');
-    expect(layer?.visible).toBe(true);
+    // "my-tracks" starts as visible: true
+    useMapStore.getState().toggleLayerVisibility('my-tracks');
+    const layer = useMapStore.getState().layers.find((l) => l.id === 'my-tracks');
+    expect(layer?.visible).toBe(false);
 
     // Toggle it again
-    useMapStore.getState().toggleLayerVisibility('satellite');
-    const layer2 = useMapStore.getState().layers.find((l) => l.id === 'satellite');
-    expect(layer2?.visible).toBe(false);
+    useMapStore.getState().toggleLayerVisibility('my-tracks');
+    const layer2 = useMapStore.getState().layers.find((l) => l.id === 'my-tracks');
+    expect(layer2?.visible).toBe(true);
   });
 
   it('toggleLayerVisibility clears activePreset', () => {
@@ -53,42 +53,39 @@ describe('mapStore', () => {
   });
 
   it('setLayerOpacity updates opacity for correct layer', () => {
-    useMapStore.getState().setLayerOpacity('hillshade', 0.7);
-    const hillshade = useMapStore.getState().layers.find((l) => l.id === 'hillshade');
-    expect(hillshade?.opacity).toBe(0.7);
+    useMapStore.getState().setLayerOpacity('topo-base', 0.7);
+    const topo = useMapStore.getState().layers.find((l) => l.id === 'topo-base');
+    expect(topo?.opacity).toBe(0.7);
 
     // Other layers should remain untouched
-    const contours = useMapStore.getState().layers.find((l) => l.id === 'contours');
-    expect(contours?.opacity).toBe(0.6);
+    const tracks = useMapStore.getState().layers.find((l) => l.id === 'my-tracks');
+    expect(tracks?.opacity).toBe(1);
   });
 
   it('applyPreset applies all layer configs', () => {
     const preset: LayerPreset = {
-      id: 'hiking',
-      name: 'Hiking',
+      id: 'minimal',
+      name: 'Minimal',
       layers: {
-        'topo-base': { visible: true, opacity: 1 },
-        satellite: { visible: false, opacity: 0.5 },
-        hillshade: { visible: true, opacity: 0.8 },
-        contours: { visible: true, opacity: 1 },
-        'public-land': { visible: true, opacity: 0.6 },
-        trails: { visible: true, opacity: 1 },
+        'topo-base': { visible: true, opacity: 0.8 },
+        'my-tracks': { visible: false, opacity: 0.5 },
+        waypoints: { visible: true, opacity: 1 },
       },
     };
     useMapStore.getState().applyPreset(preset);
 
     const state = useMapStore.getState();
-    const satellite = state.layers.find((l) => l.id === 'satellite');
-    expect(satellite?.opacity).toBe(0.5);
-    expect(satellite?.visible).toBe(false);
+    const topo = state.layers.find((l) => l.id === 'topo-base');
+    expect(topo?.opacity).toBe(0.8);
+    expect(topo?.visible).toBe(true);
 
-    const hillshade = state.layers.find((l) => l.id === 'hillshade');
-    expect(hillshade?.opacity).toBe(0.8);
-    expect(hillshade?.visible).toBe(true);
+    const tracks = state.layers.find((l) => l.id === 'my-tracks');
+    expect(tracks?.opacity).toBe(0.5);
+    expect(tracks?.visible).toBe(false);
 
-    const publicLand = state.layers.find((l) => l.id === 'public-land');
-    expect(publicLand?.visible).toBe(true);
-    expect(publicLand?.opacity).toBe(0.6);
+    const waypoints = state.layers.find((l) => l.id === 'waypoints');
+    expect(waypoints?.visible).toBe(true);
+    expect(waypoints?.opacity).toBe(1);
   });
 
   it('applyPreset sets activePreset', () => {
@@ -132,15 +129,10 @@ describe('mapStore', () => {
 
   it('default layers has correct count and IDs', () => {
     const layers = useMapStore.getState().layers;
-    expect(layers).toHaveLength(8);
+    expect(layers).toHaveLength(3);
     const ids = layers.map((l) => l.id);
     expect(ids).toEqual([
       'topo-base',
-      'satellite',
-      'hillshade',
-      'contours',
-      'public-land',
-      'trails',
       'my-tracks',
       'waypoints',
     ]);

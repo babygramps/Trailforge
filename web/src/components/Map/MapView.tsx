@@ -29,18 +29,7 @@ export default function MapView() {
 
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
-      style: {
-        version: 8,
-        name: "TrailForge Topo",
-        sources: {
-          "topo-tiles": {
-            type: "vector",
-            url: "/tiles/styles/topo/style.json",
-          },
-        },
-        layers: [],
-        glyphs: "/tiles/fonts/{fontstack}/{range}.pbf",
-      },
+      style: "https://tiles.openfreemap.org/styles/liberty",
       center: center,
       zoom: zoom,
       bearing: bearing,

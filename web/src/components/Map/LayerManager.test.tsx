@@ -15,34 +15,16 @@ vi.mock("maplibre-gl", () => ({
 
 describe("LayerManager", () => {
   beforeEach(() => {
-    // Reset the Zustand store to its default state before each test
-    useMapStore.setState({
-      layers: [
-        { id: "topo-base", name: "Topo Base", type: "vector", visible: true, opacity: 1, sourceUrl: "" },
-        { id: "satellite", name: "Satellite", type: "raster", visible: false, opacity: 1, sourceUrl: "" },
-        { id: "hillshade", name: "Hillshade", type: "raster", visible: true, opacity: 0.3, sourceUrl: "" },
-        { id: "contours", name: "Contours", type: "vector", visible: true, opacity: 0.6, sourceUrl: "" },
-        { id: "public-land", name: "Public Land", type: "vector", visible: false, opacity: 0.4, sourceUrl: "" },
-        { id: "trails", name: "Trail Network", type: "vector", visible: true, opacity: 0.8, sourceUrl: "" },
-        { id: "my-tracks", name: "My Tracks", type: "geojson", visible: true, opacity: 1, sourceUrl: "" },
-        { id: "waypoints", name: "Waypoints", type: "geojson", visible: true, opacity: 1, sourceUrl: "" },
-      ],
-      activePreset: null,
-    });
+    useMapStore.setState(useMapStore.getInitialState());
   });
 
   it("renders all default layers", () => {
     render(<LayerManager />);
 
     const layerItems = screen.getAllByRole("listitem");
-    expect(layerItems).toHaveLength(8);
+    expect(layerItems).toHaveLength(3);
 
-    expect(screen.getByText("Topo Base")).toBeInTheDocument();
-    expect(screen.getByText("Satellite")).toBeInTheDocument();
-    expect(screen.getByText("Hillshade")).toBeInTheDocument();
-    expect(screen.getByText("Contours")).toBeInTheDocument();
-    expect(screen.getByText("Public Land")).toBeInTheDocument();
-    expect(screen.getByText("Trail Network")).toBeInTheDocument();
+    expect(screen.getByText("Base Map")).toBeInTheDocument();
     expect(screen.getByText("My Tracks")).toBeInTheDocument();
     expect(screen.getByText("Waypoints")).toBeInTheDocument();
   });
@@ -51,23 +33,22 @@ describe("LayerManager", () => {
     render(<LayerManager />);
 
     const checkboxes = screen.getAllByRole("checkbox");
-    // "Satellite" is the 2nd layer and is not visible
-    const satelliteCheckbox = checkboxes[1];
-    expect(satelliteCheckbox).not.toBeChecked();
+    // "My Tracks" is the 2nd layer and is visible
+    const tracksCheckbox = checkboxes[1];
+    expect(tracksCheckbox).toBeChecked();
 
-    fireEvent.click(satelliteCheckbox);
+    fireEvent.click(tracksCheckbox);
 
-    // After toggle, "satellite" layer should now be visible
     const state = useMapStore.getState();
-    const satellite = state.layers.find((l) => l.id === "satellite");
-    expect(satellite?.visible).toBe(true);
+    const tracks = state.layers.find((l) => l.id === "my-tracks");
+    expect(tracks?.visible).toBe(false);
   });
 
   it("slider updates opacity", () => {
     render(<LayerManager />);
 
     const sliders = screen.getAllByRole("slider");
-    // "Topo Base" is the 1st layer, visible=true, opacity=1
+    // "Base Map" is the 1st layer, visible=true, opacity=1
     const topoSlider = sliders[0];
 
     fireEvent.change(topoSlider, { target: { value: "0.5" } });
@@ -78,18 +59,17 @@ describe("LayerManager", () => {
   });
 
   it("disabled slider when layer is not visible", () => {
+    // Set my-tracks to not visible
+    useMapStore.getState().toggleLayerVisibility("my-tracks");
+
     render(<LayerManager />);
 
     const sliders = screen.getAllByRole("slider");
-    // "Satellite" is the 2nd layer and visible=false
-    const satelliteSlider = sliders[1];
-    expect(satelliteSlider).toBeDisabled();
+    // "my-tracks" is the 2nd layer and now visible=false
+    const tracksSlider = sliders[1];
+    expect(tracksSlider).toBeDisabled();
 
-    // "Public Land" is the 5th layer and visible=false
-    const publicLandSlider = sliders[4];
-    expect(publicLandSlider).toBeDisabled();
-
-    // "Topo Base" is visible, so its slider should be enabled
+    // "Base Map" is visible, so its slider should be enabled
     const topoSlider = sliders[0];
     expect(topoSlider).not.toBeDisabled();
   });

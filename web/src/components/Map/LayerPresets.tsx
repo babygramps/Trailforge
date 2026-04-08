@@ -5,59 +5,30 @@ import type { LayerPreset } from "../../types";
 
 const BUILTIN_PRESETS: LayerPreset[] = [
   {
-    id: "preset-topo",
-    name: "Topo",
+    id: "preset-all",
+    name: "All Layers",
     layers: {
       "topo-base": { visible: true, opacity: 1 },
-      satellite: { visible: false, opacity: 1 },
-      hillshade: { visible: true, opacity: 0.3 },
-      contours: { visible: true, opacity: 0.6 },
-      "public-land": { visible: false, opacity: 0.4 },
-      trails: { visible: true, opacity: 0.8 },
       "my-tracks": { visible: true, opacity: 1 },
       waypoints: { visible: true, opacity: 1 },
     },
   },
   {
-    id: "preset-satellite-topo",
-    name: "Satellite+Topo",
-    layers: {
-      "topo-base": { visible: false, opacity: 1 },
-      satellite: { visible: true, opacity: 1 },
-      hillshade: { visible: false, opacity: 0.3 },
-      contours: { visible: true, opacity: 0.5 },
-      "public-land": { visible: false, opacity: 0.4 },
-      trails: { visible: true, opacity: 0.9 },
-      "my-tracks": { visible: true, opacity: 1 },
-      waypoints: { visible: true, opacity: 1 },
-    },
-  },
-  {
-    id: "preset-public-land",
-    name: "Public Land",
-    layers: {
-      "topo-base": { visible: true, opacity: 0.7 },
-      satellite: { visible: false, opacity: 1 },
-      hillshade: { visible: true, opacity: 0.3 },
-      contours: { visible: false, opacity: 0.6 },
-      "public-land": { visible: true, opacity: 0.5 },
-      trails: { visible: true, opacity: 0.8 },
-      "my-tracks": { visible: true, opacity: 1 },
-      waypoints: { visible: true, opacity: 1 },
-    },
-  },
-  {
-    id: "preset-minimal",
-    name: "Minimal",
+    id: "preset-map-only",
+    name: "Map Only",
     layers: {
       "topo-base": { visible: true, opacity: 1 },
-      satellite: { visible: false, opacity: 1 },
-      hillshade: { visible: false, opacity: 0.3 },
-      contours: { visible: false, opacity: 0.6 },
-      "public-land": { visible: false, opacity: 0.4 },
-      trails: { visible: false, opacity: 0.8 },
+      "my-tracks": { visible: false, opacity: 1 },
+      waypoints: { visible: false, opacity: 1 },
+    },
+  },
+  {
+    id: "preset-tracks",
+    name: "Tracks Focus",
+    layers: {
+      "topo-base": { visible: true, opacity: 0.6 },
       "my-tracks": { visible: true, opacity: 1 },
-      waypoints: { visible: true, opacity: 1 },
+      waypoints: { visible: false, opacity: 1 },
     },
   },
 ];
