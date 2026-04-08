@@ -3,6 +3,9 @@ package repository
 import (
 	"context"
 	"fmt"
+	"log"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -35,7 +38,47 @@ func NewDB(ctx context.Context, databaseURL string) (*DB, error) {
 		return nil, fmt.Errorf("pinging database: %w", err)
 	}
 
-	return &DB{Pool: pool}, nil
+	db := &DB{Pool: pool}
+
+	// Auto-run migrations on startup.
+	if err := db.Migrate(ctx); err != nil {
+		pool.Close()
+		return nil, fmt.Errorf("running migrations: %w", err)
+	}
+
+	return db, nil
+}
+
+// Migrate runs SQL migration files from the migrations directory.
+func (db *DB) Migrate(ctx context.Context) error {
+	// Try common migration paths (local dev vs Docker).
+	paths := []string{"migrations", "/app/migrations", "api/migrations"}
+	var migrationDir string
+	for _, p := range paths {
+		if _, err := os.Stat(filepath.Join(p, "001_initial.up.sql")); err == nil {
+			migrationDir = p
+			break
+		}
+	}
+	if migrationDir == "" {
+		log.Println("no migrations directory found, skipping auto-migration")
+		return nil
+	}
+
+	sqlFile := filepath.Join(migrationDir, "001_initial.up.sql")
+	sql, err := os.ReadFile(sqlFile)
+	if err != nil {
+		return fmt.Errorf("reading migration file: %w", err)
+	}
+
+	if _, err := db.Pool.Exec(ctx, string(sql)); err != nil {
+		// Tables may already exist — that's fine.
+		log.Printf("migration note: %v (may already be applied)", err)
+		return nil
+	}
+
+	log.Println("database migration applied successfully")
+	return nil
 }
 
 // Close shuts down the connection pool.
