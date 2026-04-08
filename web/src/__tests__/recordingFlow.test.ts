@@ -77,22 +77,27 @@ describe('Recording Flow Integration', () => {
     const sessionId = result.current.session!.id;
 
     // Simulate GPS positions (accuracy < 30m threshold)
-    act(() => {
+    await act(async () => {
       watchCallback?.(createGeolocationPosition(37.7567, -119.5966, 1209, 10, 1.2));
     });
 
-    // Advance 5s to trigger save interval
+    // Advance past save interval to trigger saveCurrentPoint (async IDB write)
     await act(async () => {
-      vi.advanceTimersByTime(5000);
+      await vi.advanceTimersByTimeAsync(5100);
     });
 
     // Simulate second position
-    act(() => {
+    await act(async () => {
       watchCallback?.(createGeolocationPosition(37.7571, -119.5958, 1215, 8, 1.1));
     });
 
     await act(async () => {
-      vi.advanceTimersByTime(5000);
+      await vi.advanceTimersByTimeAsync(5100);
+    });
+
+    // Advance stats timer to update liveStats
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(1100);
     });
 
     // Should have accumulated stats
@@ -136,25 +141,25 @@ describe('Recording Flow Integration', () => {
     });
 
     // Send low accuracy point (> 30m threshold)
-    act(() => {
+    await act(async () => {
       watchCallback?.(createGeolocationPosition(37.7567, -119.5966, 1209, 50, 1.2));
     });
 
     // Advance past save interval
     await act(async () => {
-      vi.advanceTimersByTime(5000);
+      await vi.advanceTimersByTimeAsync(5100);
     });
 
     // Point count should still be 0 — low accuracy was filtered
     expect(result.current.session?.pointCount).toBe(0);
 
     // Now send a good accuracy point
-    act(() => {
+    await act(async () => {
       watchCallback?.(createGeolocationPosition(37.7567, -119.5966, 1209, 10, 1.2));
     });
 
     await act(async () => {
-      vi.advanceTimersByTime(5000);
+      await vi.advanceTimersByTimeAsync(5100);
     });
 
     expect(result.current.session?.pointCount).toBe(1);
