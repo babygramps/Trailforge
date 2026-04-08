@@ -41,7 +41,7 @@ services:
       - FITBIT_CLIENT_SECRET=${FITBIT_CLIENT_SECRET:-}
       - SATELLITE_PROVIDER=${SATELLITE_PROVIDER:-}
       - SATELLITE_API_KEY=${SATELLITE_API_KEY:-}
-      - VALHALLA_URL=http://trailforge-valhalla:8002
+      - VALHALLA_URL=${VALHALLA_URL:-}
       - TILE_SERVER_URL=http://trailforge-tiles:8081
     depends_on:
       trailforge-db:
@@ -86,6 +86,8 @@ services:
   trailforge-valhalla:
     image: ghcr.io/gis-ops/docker-valhalla/valhalla:latest
     restart: unless-stopped
+    profiles:
+      - routing
     volumes:
       - ./valhalla/custom_files:/custom_files
     environment:
