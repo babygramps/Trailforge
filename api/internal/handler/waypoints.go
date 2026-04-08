@@ -12,11 +12,11 @@ import (
 
 // WaypointHandler serves CRUD endpoints for waypoints.
 type WaypointHandler struct {
-	waypoints *repository.WaypointRepository
+	waypoints repository.WaypointRepo
 }
 
 // NewWaypointHandler returns a new WaypointHandler.
-func NewWaypointHandler(waypoints *repository.WaypointRepository) *WaypointHandler {
+func NewWaypointHandler(waypoints repository.WaypointRepo) *WaypointHandler {
 	return &WaypointHandler{waypoints: waypoints}
 }
 

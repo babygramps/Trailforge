@@ -20,12 +20,12 @@ const (
 
 // AuthHandler handles user registration, login, and token refresh.
 type AuthHandler struct {
-	users     *repository.UserRepository
+	users     repository.UserRepo
 	jwtSecret []byte
 }
 
 // NewAuthHandler returns a new AuthHandler.
-func NewAuthHandler(users *repository.UserRepository, jwtSecret string) *AuthHandler {
+func NewAuthHandler(users repository.UserRepo, jwtSecret string) *AuthHandler {
 	return &AuthHandler{
 		users:     users,
 		jwtSecret: []byte(jwtSecret),

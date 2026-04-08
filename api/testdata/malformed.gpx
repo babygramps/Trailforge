@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx xmlns="http://www.topografix.com/GPX/1/1" version="1.1" creator="TrailForge Test Suite">
+  <trk>
+    <name>Malformed Track</name>
+    <trkseg>
+      <trkpt lat="37.7567" lon="-119.5966">
+        <ele>1209.0</ele>
+        <time>2025-07-15T08:00:00Z</time>
+      <!-- Missing closing </trkpt> tag -->
+      <trkpt lat="37.7571" lon="-119.5963">
+        <ele>1215.4</ele>
+        <time>2025-07-15T08:02:00Z</time>
+      </trkpt>
+    </trkseg>
+  </trk>
+<!-- Missing closing </gpx> tag -->

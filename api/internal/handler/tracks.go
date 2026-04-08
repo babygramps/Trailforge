@@ -15,11 +15,11 @@ import (
 
 // TrackHandler serves CRUD and utility endpoints for GPS tracks.
 type TrackHandler struct {
-	tracks *repository.TrackRepository
+	tracks repository.TrackRepo
 }
 
 // NewTrackHandler returns a new TrackHandler.
-func NewTrackHandler(tracks *repository.TrackRepository) *TrackHandler {
+func NewTrackHandler(tracks repository.TrackRepo) *TrackHandler {
 	return &TrackHandler{tracks: tracks}
 }
 
@@ -32,6 +32,7 @@ func (h *TrackHandler) Register(g *echo.Group) {
 	g.DELETE("/:id", h.Delete)
 	g.POST("/:id/points", h.AppendPoints)
 	g.GET("/:id/gpx", h.ExportGPX)
+	g.POST("/import", h.ImportGPX)
 }
 
 // Create handles POST /api/tracks.

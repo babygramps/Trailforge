@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx xmlns="http://www.topografix.com/GPX/1/1"
+     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+     xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd"
+     version="1.1"
+     creator="TrailForge Test Suite">
+  <trk>
+    <name>Single Point Track</name>
+    <type>hiking</type>
+    <trkseg>
+      <trkpt lat="37.7567" lon="-119.5966">
+        <ele>1209.0</ele>
+        <time>2025-07-15T08:00:00Z</time>
+      </trkpt>
+    </trkseg>
+  </trk>
+</gpx>

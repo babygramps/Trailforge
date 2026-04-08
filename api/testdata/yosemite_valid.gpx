@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gpx xmlns="http://www.topografix.com/GPX/1/1"
+     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+     xsi:schemaLocation="http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd"
+     version="1.1"
+     creator="TrailForge Test Suite">
+  <trk>
+    <name>Yosemite Valley Loop</name>
+    <type>hiking</type>
+    <trkseg>
+      <trkpt lat="37.7567" lon="-119.5966">
+        <ele>1209.0</ele>
+        <time>2025-07-15T08:00:00Z</time>
+      </trkpt>
+      <trkpt lat="37.7571" lon="-119.5963">
+        <ele>1215.4</ele>
+        <time>2025-07-15T08:02:00Z</time>
+      </trkpt>
+      <trkpt lat="37.7576" lon="-119.5958">
+        <ele>1223.1</ele>
+        <time>2025-07-15T08:04:00Z</time>
+      </trkpt>
+      <trkpt lat="37.7580" lon="-119.5952">
+        <ele>1232.7</ele>
+        <time>2025-07-15T08:06:00Z</time>
+      </trkpt>
+      <trkpt lat="37.7585" lon="-119.5947">
+        <ele>1241.3</ele>
+        <time>2025-07-15T08:08:00Z</time>
+      </trkpt>
+      <trkpt lat="37.7589" lon="-119.5941">
+        <ele>1251.8</ele>
+        <time>2025-07-15T08:10:00Z</time>
+      </trkpt>
+      <trkpt lat="37.7593" lon="-119.5935">
+        <ele>1263.2</ele>
+        <time>2025-07-15T08:12:00Z</time>
+      </trkpt>
+      <trkpt lat="37.7597" lon="-119.5930">
+        <ele>1274.6</ele>
+        <time>2025-07-15T08:14:00Z</time>
+      </trkpt>
+      <trkpt lat="37.7601" lon="-119.5924">
+        <ele>1286.0</ele>
+        <time>2025-07-15T08:16:00Z</time>
+      </trkpt>
+      <trkpt lat="37.7605" lon="-119.5919">
+        <ele>1298.5</ele>
+        <time>2025-07-15T08:18:00Z</time>
+      </trkpt>
+      <trkpt lat="37.7609" lon="-119.5914">
+        <ele>1312.1</ele>
+        <time>2025-07-15T08:20:00Z</time>
+      </trkpt>
+      <trkpt lat="37.7612" lon="-119.5910">
+        <ele>1325.0</ele>
+        <time>2025-07-15T08:22:00Z</time>
+      </trkpt>
+      <trkpt lat="37.7615" lon="-119.5907">
+        <ele>1331.0</ele>
+        <time>2025-07-15T08:24:00Z</time>
+      </trkpt>
+      <trkpt lat="37.7618" lon="-119.5903">
+        <ele>1325.8</ele>
+        <time>2025-07-15T08:26:00Z</time>
+      </trkpt>
+      <trkpt lat="37.7620" lon="-119.5899">
+        <ele>1314.2</ele>
+        <time>2025-07-15T08:28:00Z</time>
+      </trkpt>
+      <trkpt lat="37.7622" lon="-119.5895">
+        <ele>1300.6</ele>
+        <time>2025-07-15T08:30:00Z</time>
+      </trkpt>
+      <trkpt lat="37.7624" lon="-119.5891">
+        <ele>1285.9</ele>
+        <time>2025-07-15T08:32:00Z</time>
+      </trkpt>
+      <trkpt lat="37.7625" lon="-119.5888">
+        <ele>1268.3</ele>
+        <time>2025-07-15T08:34:00Z</time>
+      </trkpt>
+      <trkpt lat="37.7627" lon="-119.5884">
+        <ele>1248.1</ele>
+        <time>2025-07-15T08:36:00Z</time>
+      </trkpt>
+      <trkpt lat="37.7629" lon="-119.5880">
+        <ele>1228.0</ele>
+        <time>2025-07-15T08:38:00Z</time>
+      </trkpt>
+    </trkseg>
+  </trk>
+</gpx>
