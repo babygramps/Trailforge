@@ -74,30 +74,100 @@
   height: 100%;
 }
 
+/* ---- Layers toggle button (mobile) ---- */
+.layers-toggle-btn {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 5;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.9);
+  color: #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(4px);
+}
+
+@media (min-width: 768px) {
+  .layers-toggle-btn {
+    display: none;
+  }
+}
+
 .map-sidebar {
   position: absolute;
-  top: 8px;
-  left: 8px;
-  z-index: 10;
-  background: rgba(15, 23, 42, 0.92);
-  border-radius: 8px;
+  top: 0;
+  left: 0;
+  z-index: 20;
+  background: rgba(15, 23, 42, 0.96);
   padding: 12px;
-  max-height: calc(100% - 16px);
+  max-height: 100%;
   overflow-y: auto;
-  width: 240px;
-  backdrop-filter: blur(8px);
-  display: none;
+  width: 260px;
+  backdrop-filter: blur(12px);
+  transform: translateX(-100%);
+  transition: transform 0.2s ease;
 }
 
-.map-sidebar:target,
 .map-sidebar.open {
-  display: block;
+  transform: translateX(0);
 }
 
-/* Show sidebar on wider screens */
+.sidebar-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 15;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #334155;
+}
+
+.sidebar-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #e2e8f0;
+}
+
+.sidebar-close {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: #334155;
+  color: #e2e8f0;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+/* Show sidebar always on wider screens */
 @media (min-width: 768px) {
   .map-sidebar {
-    display: block;
+    top: 8px;
+    left: 8px;
+    border-radius: 8px;
+    max-height: calc(100% - 16px);
+    transform: translateX(0);
+  }
+
+  .sidebar-backdrop {
+    display: none;
+  }
+
+  .sidebar-close {
+    display: none;
   }
 }
 
