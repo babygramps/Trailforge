@@ -24,7 +24,7 @@ func Load() *Config {
 	return &Config{
 		DatabaseURL:        getEnv("DATABASE_URL", ""),
 		JWTSecret:          getEnv("JWT_SECRET", ""),
-		APIPort:            getEnv("API_PORT", "8080"),
+		APIPort:            getEnv("PORT", getEnv("API_PORT", "8080")),
 		FitbitClientID:     getEnv("FITBIT_CLIENT_ID", ""),
 		FitbitClientSecret: getEnv("FITBIT_CLIENT_SECRET", ""),
 		ValhallaURL:        getEnv("VALHALLA_URL", "http://valhalla:8002"),
