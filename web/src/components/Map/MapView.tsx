@@ -5,6 +5,49 @@ import { useMapStore } from "../../stores/mapStore";
 import { apiClient } from "../../api/client";
 import type { Track, Waypoint } from "../../types";
 
+// Tile sources keyed by store layer ID.
+// Each entry becomes a raster source + layer on the map.
+const TILE_SOURCES: Record<
+  string,
+  { tiles: string[]; tileSize: number; maxzoom: number; attribution: string }
+> = {
+  "topo-base": {
+    tiles: ["https://tile.opentopomap.org/{z}/{x}/{y}.png"],
+    tileSize: 256,
+    maxzoom: 17,
+    attribution:
+      '&copy; <a href="https://opentopomap.org">OpenTopoMap</a> (CC-BY-SA)',
+  },
+  osm: {
+    tiles: ["https://tile.openstreetmap.org/{z}/{x}/{y}.png"],
+    tileSize: 256,
+    maxzoom: 19,
+    attribution:
+      '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+  },
+  "cyclosm": {
+    tiles: ["https://a.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png"],
+    tileSize: 256,
+    maxzoom: 19,
+    attribution:
+      '&copy; <a href="https://www.cyclosm.org">CyclOSM</a> / OSM',
+  },
+  "waymarked-hiking": {
+    tiles: ["https://tile.waymarkedtrails.org/hiking/{z}/{x}/{y}.png"],
+    tileSize: 256,
+    maxzoom: 18,
+    attribution:
+      '&copy; <a href="https://waymarkedtrails.org">Waymarked Trails</a>',
+  },
+  "waymarked-cycling": {
+    tiles: ["https://tile.waymarkedtrails.org/cycling/{z}/{x}/{y}.png"],
+    tileSize: 256,
+    maxzoom: 18,
+    attribution:
+      '&copy; <a href="https://waymarkedtrails.org">Waymarked Trails</a>',
+  },
+};
+
 export default function MapView() {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -27,27 +70,40 @@ export default function MapView() {
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
+    // Build initial sources and layers from TILE_SOURCES
+    const sources: Record<string, maplibregl.SourceSpecification> = {};
+    const baseLayers: maplibregl.LayerSpecification[] = [];
+
+    for (const [id, src] of Object.entries(TILE_SOURCES)) {
+      sources[id] = {
+        type: "raster",
+        tiles: src.tiles,
+        tileSize: src.tileSize,
+        maxzoom: src.maxzoom,
+        attribution: src.attribution,
+      };
+
+      const storeLayer = useMapStore.getState().layers.find((l) => l.id === id);
+      baseLayers.push({
+        id: `${id}-layer`,
+        type: "raster",
+        source: id,
+        layout: {
+          visibility: storeLayer?.visible ? "visible" : "none",
+        },
+        paint: {
+          "raster-opacity": storeLayer?.opacity ?? 1,
+        },
+      });
+    }
+
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
       style: {
         version: 8,
-        name: "TrailForge Topo",
-        sources: {
-          "opentopomap": {
-            type: "raster",
-            tiles: ["https://tile.opentopomap.org/{z}/{x}/{y}.png"],
-            tileSize: 256,
-            maxzoom: 17,
-            attribution: '&copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)',
-          },
-        },
-        layers: [
-          {
-            id: "opentopomap-layer",
-            type: "raster",
-            source: "opentopomap",
-          },
-        ],
+        name: "TrailForge",
+        sources,
+        layers: baseLayers,
       },
       center: center,
       zoom: zoom,
@@ -60,7 +116,10 @@ export default function MapView() {
       new maplibregl.NavigationControl({ showCompass: true }),
       "top-right"
     );
-    map.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-left");
+    map.addControl(
+      new maplibregl.ScaleControl({ unit: "metric" }),
+      "bottom-left"
+    );
     map.addControl(
       new maplibregl.GeolocateControl({
         positionOptions: { enableHighAccuracy: true },
@@ -78,18 +137,13 @@ export default function MapView() {
     });
 
     map.on("load", () => {
-      // Add empty sources for user data
+      // User data sources
       map.addSource("user-tracks", {
         type: "geojson",
         data: { type: "FeatureCollection", features: [] },
       });
 
       map.addSource("user-waypoints", {
-        type: "geojson",
-        data: { type: "FeatureCollection", features: [] },
-      });
-
-      map.addSource("live-position", {
         type: "geojson",
         data: { type: "FeatureCollection", features: [] },
       });
@@ -150,7 +204,6 @@ export default function MapView() {
         },
       });
 
-      // Load initial data
       loadTracks(map);
       loadWaypoints(map);
     });
@@ -177,8 +230,9 @@ export default function MapView() {
       ]);
 
       if (selectedTrackId) {
-        // Fly to selected track
-        const source = map.getSource("user-tracks") as maplibregl.GeoJSONSource;
+        const source = map.getSource(
+          "user-tracks"
+        ) as maplibregl.GeoJSONSource;
         if (source) {
           apiClient
             .getTrack(selectedTrackId)
@@ -199,33 +253,39 @@ export default function MapView() {
     }
   }, [selectedTrackId]);
 
-  // Sync layer visibility and opacity
+  // Sync ALL layer visibility and opacity from the store to the map
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !map.isStyleLoaded()) return;
 
+    for (const layer of layers) {
+      // Raster tile layers use "{id}-layer" naming
+      const mapLayerId = `${layer.id}-layer`;
+      if (map.getLayer(mapLayerId)) {
+        map.setLayoutProperty(
+          mapLayerId,
+          "visibility",
+          layer.visible ? "visible" : "none"
+        );
+        map.setPaintProperty(mapLayerId, "raster-opacity", layer.opacity);
+      }
+    }
+
+    // My Tracks
     const trackLayer = layers.find((l) => l.id === "my-tracks");
     if (trackLayer && map.getLayer("tracks-line")) {
-      map.setLayoutProperty(
-        "tracks-line",
-        "visibility",
-        trackLayer.visible ? "visible" : "none"
-      );
+      const vis = trackLayer.visible ? "visible" : "none";
+      map.setLayoutProperty("tracks-line", "visibility", vis);
+      map.setLayoutProperty("tracks-line-selected", "visibility", vis);
       map.setPaintProperty("tracks-line", "line-opacity", trackLayer.opacity);
     }
 
+    // Waypoints
     const wpLayer = layers.find((l) => l.id === "waypoints");
     if (wpLayer && map.getLayer("waypoints-circle")) {
-      map.setLayoutProperty(
-        "waypoints-circle",
-        "visibility",
-        wpLayer.visible ? "visible" : "none"
-      );
-      map.setLayoutProperty(
-        "waypoints-label",
-        "visibility",
-        wpLayer.visible ? "visible" : "none"
-      );
+      const vis = wpLayer.visible ? "visible" : "none";
+      map.setLayoutProperty("waypoints-circle", "visibility", vis);
+      map.setLayoutProperty("waypoints-label", "visibility", vis);
     }
   }, [layers]);
 
@@ -254,7 +314,6 @@ export default function MapView() {
     []
   );
 
-  // Expose updateLivePosition on window for useGPS to call
   useEffect(() => {
     (window as unknown as Record<string, unknown>).__updateMapPosition =
       updateLivePosition;
@@ -266,7 +325,13 @@ export default function MapView() {
   return (
     <div
       ref={mapContainerRef}
-      style={{ width: "100%", height: "100%", position: "absolute", top: 0, left: 0 }}
+      style={{
+        width: "100%",
+        height: "100%",
+        position: "absolute",
+        top: 0,
+        left: 0,
+      }}
     />
   );
 }
@@ -308,7 +373,9 @@ async function loadWaypoints(map: maplibregl.Map): Promise<void> {
       },
     }));
 
-    const source = map.getSource("user-waypoints") as maplibregl.GeoJSONSource;
+    const source = map.getSource(
+      "user-waypoints"
+    ) as maplibregl.GeoJSONSource;
     if (source) {
       source.setData({ type: "FeatureCollection", features });
     }
@@ -317,9 +384,7 @@ async function loadWaypoints(map: maplibregl.Map): Promise<void> {
   }
 }
 
-function extractCoords(
-  geojson: GeoJSON.GeoJSON
-): Array<[number, number]> {
+function extractCoords(geojson: GeoJSON.GeoJSON): Array<[number, number]> {
   const coords: Array<[number, number]> = [];
 
   function walk(g: GeoJSON.GeoJSON) {
@@ -347,8 +412,11 @@ function flattenCoords(
   input: number[],
   out: Array<[number, number]>
 ): void {
-  if (typeof input[0] === "number" && typeof input[1] === "number" && input.length >= 2) {
-    // Could be a single coordinate or array of arrays
+  if (
+    typeof input[0] === "number" &&
+    typeof input[1] === "number" &&
+    input.length >= 2
+  ) {
     if (!Array.isArray(input[0])) {
       out.push([input[0] as number, input[1] as number]);
       return;

@@ -36,7 +36,6 @@ describe('mapStore', () => {
   });
 
   it('toggleLayerVisibility clears activePreset', () => {
-    // First apply a preset to set activePreset
     const preset: LayerPreset = {
       id: 'test-preset',
       name: 'Test',
@@ -47,8 +46,7 @@ describe('mapStore', () => {
     useMapStore.getState().applyPreset(preset);
     expect(useMapStore.getState().activePreset).toBe('test-preset');
 
-    // Toggling a layer should clear the preset
-    useMapStore.getState().toggleLayerVisibility('satellite');
+    useMapStore.getState().toggleLayerVisibility('osm');
     expect(useMapStore.getState().activePreset).toBeNull();
   });
 
@@ -129,10 +127,14 @@ describe('mapStore', () => {
 
   it('default layers has correct count and IDs', () => {
     const layers = useMapStore.getState().layers;
-    expect(layers).toHaveLength(3);
+    expect(layers).toHaveLength(7);
     const ids = layers.map((l) => l.id);
     expect(ids).toEqual([
       'topo-base',
+      'osm',
+      'cyclosm',
+      'waymarked-hiking',
+      'waymarked-cycling',
       'my-tracks',
       'waypoints',
     ]);

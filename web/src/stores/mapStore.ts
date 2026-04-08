@@ -2,6 +2,7 @@ import { create } from "zustand";
 import type { MapLayer, LayerPreset, RecordingSession } from "../types";
 
 const DEFAULT_LAYERS: MapLayer[] = [
+  // ---- Base maps (toggle one at a time, or blend) ----
   {
     id: "topo-base",
     name: "OpenTopoMap",
@@ -10,6 +11,40 @@ const DEFAULT_LAYERS: MapLayer[] = [
     opacity: 1,
     sourceUrl: "https://tile.opentopomap.org/{z}/{x}/{y}.png",
   },
+  {
+    id: "osm",
+    name: "OpenStreetMap",
+    type: "raster",
+    visible: false,
+    opacity: 1,
+    sourceUrl: "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+  },
+  {
+    id: "cyclosm",
+    name: "CyclOSM (Bike)",
+    type: "raster",
+    visible: false,
+    opacity: 1,
+    sourceUrl: "https://a.tile-cyclosm.openstreetmap.fr/cyclosm/{z}/{x}/{y}.png",
+  },
+  // ---- Overlays (layer on top of base) ----
+  {
+    id: "waymarked-hiking",
+    name: "Hiking Trails",
+    type: "raster",
+    visible: false,
+    opacity: 0.7,
+    sourceUrl: "https://tile.waymarkedtrails.org/hiking/{z}/{x}/{y}.png",
+  },
+  {
+    id: "waymarked-cycling",
+    name: "Cycling Routes",
+    type: "raster",
+    visible: false,
+    opacity: 0.7,
+    sourceUrl: "https://tile.waymarkedtrails.org/cycling/{z}/{x}/{y}.png",
+  },
+  // ---- User data ----
   {
     id: "my-tracks",
     name: "My Tracks",

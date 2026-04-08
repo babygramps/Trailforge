@@ -22,9 +22,13 @@ describe("LayerManager", () => {
     render(<LayerManager />);
 
     const layerItems = screen.getAllByRole("listitem");
-    expect(layerItems).toHaveLength(3);
+    expect(layerItems).toHaveLength(7);
 
     expect(screen.getByText("OpenTopoMap")).toBeInTheDocument();
+    expect(screen.getByText("OpenStreetMap")).toBeInTheDocument();
+    expect(screen.getByText("CyclOSM (Bike)")).toBeInTheDocument();
+    expect(screen.getByText("Hiking Trails")).toBeInTheDocument();
+    expect(screen.getByText("Cycling Routes")).toBeInTheDocument();
     expect(screen.getByText("My Tracks")).toBeInTheDocument();
     expect(screen.getByText("Waypoints")).toBeInTheDocument();
   });
@@ -33,22 +37,21 @@ describe("LayerManager", () => {
     render(<LayerManager />);
 
     const checkboxes = screen.getAllByRole("checkbox");
-    // "My Tracks" is the 2nd layer and is visible
-    const tracksCheckbox = checkboxes[1];
-    expect(tracksCheckbox).toBeChecked();
+    // "OpenStreetMap" is the 2nd layer and is not visible
+    const osmCheckbox = checkboxes[1];
+    expect(osmCheckbox).not.toBeChecked();
 
-    fireEvent.click(tracksCheckbox);
+    fireEvent.click(osmCheckbox);
 
     const state = useMapStore.getState();
-    const tracks = state.layers.find((l) => l.id === "my-tracks");
-    expect(tracks?.visible).toBe(false);
+    const osm = state.layers.find((l) => l.id === "osm");
+    expect(osm?.visible).toBe(true);
   });
 
   it("slider updates opacity", () => {
     render(<LayerManager />);
 
     const sliders = screen.getAllByRole("slider");
-    // "Base Map" is the 1st layer, visible=true, opacity=1
     const topoSlider = sliders[0];
 
     fireEvent.change(topoSlider, { target: { value: "0.5" } });
@@ -59,17 +62,14 @@ describe("LayerManager", () => {
   });
 
   it("disabled slider when layer is not visible", () => {
-    // Set my-tracks to not visible
-    useMapStore.getState().toggleLayerVisibility("my-tracks");
-
     render(<LayerManager />);
 
     const sliders = screen.getAllByRole("slider");
-    // "my-tracks" is the 2nd layer and now visible=false
-    const tracksSlider = sliders[1];
-    expect(tracksSlider).toBeDisabled();
+    // "osm" is the 2nd layer and visible=false
+    const osmSlider = sliders[1];
+    expect(osmSlider).toBeDisabled();
 
-    // "Base Map" is visible, so its slider should be enabled
+    // "topo-base" is visible, so its slider should be enabled
     const topoSlider = sliders[0];
     expect(topoSlider).not.toBeDisabled();
   });

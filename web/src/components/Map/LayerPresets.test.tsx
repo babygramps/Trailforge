@@ -27,33 +27,33 @@ describe("LayerPresets", () => {
   it("renders builtin preset buttons", () => {
     render(<LayerPresets />);
 
-    expect(screen.getByRole("button", { name: "All Layers" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Map Only" })).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Tracks Focus" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Hiking" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Cycling" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Topo Only" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Street Map" })).toBeInTheDocument();
   });
 
   it("clicking preset calls applyPreset", () => {
     render(<LayerPresets />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Map Only" }));
+    fireEvent.click(screen.getByRole("button", { name: "Hiking" }));
 
     const state = useMapStore.getState();
-    expect(state.activePreset).toBe("preset-map-only");
-    // Map Only hides my-tracks
-    const tracks = state.layers.find((l) => l.id === "my-tracks");
-    expect(tracks?.visible).toBe(false);
+    expect(state.activePreset).toBe("preset-hike");
+    const hiking = state.layers.find((l) => l.id === "waymarked-hiking");
+    expect(hiking?.visible).toBe(true);
   });
 
   it("active preset gets highlighted", () => {
-    useMapStore.setState({ activePreset: "preset-all" });
+    useMapStore.setState({ activePreset: "preset-hike" });
 
     render(<LayerPresets />);
 
-    const allBtn = screen.getByRole("button", { name: "All Layers" });
-    expect(allBtn.className).toContain("active");
+    const hikeBtn = screen.getByRole("button", { name: "Hiking" });
+    expect(hikeBtn.className).toContain("active");
 
-    const mapOnlyBtn = screen.getByRole("button", { name: "Map Only" });
-    expect(mapOnlyBtn.className).not.toContain("active");
+    const bikeBtn = screen.getByRole("button", { name: "Cycling" });
+    expect(bikeBtn.className).not.toContain("active");
   });
 
   it("save custom preset flow", async () => {
