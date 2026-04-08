@@ -508,3 +508,77 @@
   color: #94a3b8;
   margin-bottom: 4px;
 }
+
+/* ---- GPS Diagnostics ---- */
+.gps-diag-error {
+  background: #7f1d1d;
+  color: #fca5a5;
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  margin-bottom: 12px;
+}
+
+.gps-diag-signal {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: #1e293b;
+  border-radius: 8px;
+}
+
+.signal-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 30px;
+}
+
+.signal-bar {
+  width: 8px;
+  border-radius: 2px;
+  transition: background 0.3s;
+}
+
+.signal-label {
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.gps-diag-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.diag-item {
+  background: #1e293b;
+  border-radius: 6px;
+  padding: 10px;
+}
+
+.diag-label {
+  display: block;
+  font-size: 0.65rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 2px;
+}
+
+.diag-value {
+  display: block;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #e2e8f0;
+  font-variant-numeric: tabular-nums;
+}
+
+.gps-diag-note {
+  font-size: 0.7rem;
+  color: #64748b;
+  font-style: italic;
+}

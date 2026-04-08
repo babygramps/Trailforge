@@ -5,6 +5,7 @@ import TrackList from "./components/Tracks/TrackList";
 import RecordingControls from "./components/Recording/RecordingControls";
 import LayerManager from "./components/Map/LayerManager";
 import LayerPresets from "./components/Map/LayerPresets";
+import GPSDiagnostics from "./components/Settings/GPSDiagnostics";
 import "./App.css";
 
 function MapPage() {
@@ -23,6 +24,7 @@ function SettingsPage() {
   return (
     <div className="settings-page">
       <h2>Settings</h2>
+      <GPSDiagnostics />
       <div className="settings-section">
         <h3>Account</h3>
         <p className="settings-placeholder">
