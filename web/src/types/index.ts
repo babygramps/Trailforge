@@ -1,4 +1,4 @@
-import type { GeoJSON } from "geojson";
+import type { Geometry } from "geojson";
 
 export type ActivityType = "bike" | "hike" | "paddle";
 
@@ -24,7 +24,7 @@ export interface Track {
   name: string;
   activityType: ActivityType;
   description: string;
-  geometry: GeoJSON;
+  geometry: Geometry;
   stats: TrackStats;
   createdAt: string;
   updatedAt: string;
@@ -50,7 +50,7 @@ export interface Route {
   name: string;
   activityType: ActivityType;
   description: string;
-  geometry: GeoJSON;
+  geometry: Geometry;
   waypoints: Waypoint[];
   totalDistance: number;
   estimatedDuration: number;

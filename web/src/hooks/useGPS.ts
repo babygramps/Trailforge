@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { savePoint, saveSession, getOrphanedSessions, getSession } from "../lib/db";
+import { savePoint, saveSession, getOrphanedSessions } from "../lib/db";
 import { useMapStore } from "../stores/mapStore";
 import type { GPSPoint, RecordingSession } from "../types";
 
