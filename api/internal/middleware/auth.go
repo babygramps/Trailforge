@@ -28,9 +28,14 @@ func JWTAuth(secret string) echo.MiddlewareFunc {
 
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			path := c.Path()
+			path := c.Request().URL.Path
 
-			// Skip auth for allowlisted paths.
+			// Only require auth for /api and /ws paths.
+			if !strings.HasPrefix(path, "/api/") && !strings.HasPrefix(path, "/ws/") {
+				return next(c)
+			}
+
+			// Skip auth for allowlisted API paths.
 			if skipPaths[path] {
 				return next(c)
 			}
