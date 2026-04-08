@@ -24,7 +24,7 @@ describe("LayerManager", () => {
     const layerItems = screen.getAllByRole("listitem");
     expect(layerItems).toHaveLength(3);
 
-    expect(screen.getByText("Base Map")).toBeInTheDocument();
+    expect(screen.getByText("OpenTopoMap")).toBeInTheDocument();
     expect(screen.getByText("My Tracks")).toBeInTheDocument();
     expect(screen.getByText("Waypoints")).toBeInTheDocument();
   });

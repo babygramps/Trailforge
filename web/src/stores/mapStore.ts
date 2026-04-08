@@ -4,11 +4,11 @@ import type { MapLayer, LayerPreset, RecordingSession } from "../types";
 const DEFAULT_LAYERS: MapLayer[] = [
   {
     id: "topo-base",
-    name: "Base Map",
-    type: "vector",
+    name: "OpenTopoMap",
+    type: "raster",
     visible: true,
     opacity: 1,
-    sourceUrl: "https://tiles.openfreemap.org/styles/liberty",
+    sourceUrl: "https://tile.opentopomap.org/{z}/{x}/{y}.png",
   },
   {
     id: "my-tracks",

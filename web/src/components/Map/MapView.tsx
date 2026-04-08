@@ -29,12 +29,31 @@ export default function MapView() {
 
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
-      style: "https://tiles.openfreemap.org/styles/liberty",
+      style: {
+        version: 8,
+        name: "TrailForge Topo",
+        sources: {
+          "opentopomap": {
+            type: "raster",
+            tiles: ["https://tile.opentopomap.org/{z}/{x}/{y}.png"],
+            tileSize: 256,
+            maxzoom: 17,
+            attribution: '&copy; <a href="https://opentopomap.org">OpenTopoMap</a> (<a href="https://creativecommons.org/licenses/by-sa/3.0/">CC-BY-SA</a>)',
+          },
+        },
+        layers: [
+          {
+            id: "opentopomap-layer",
+            type: "raster",
+            source: "opentopomap",
+          },
+        ],
+      },
       center: center,
       zoom: zoom,
       bearing: bearing,
       pitch: pitch,
-      attributionControl: false,
+      attributionControl: { compact: true },
     });
 
     map.addControl(
