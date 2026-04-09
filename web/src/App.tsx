@@ -7,6 +7,7 @@ import RecordingControls from "./components/Recording/RecordingControls";
 import LayerManager from "./components/Map/LayerManager";
 import LayerPresets from "./components/Map/LayerPresets";
 import MapSearch from "./components/Map/MapSearch";
+import SaveWaypointModal from "./components/Map/SaveWaypointModal";
 import GPSDiagnostics from "./components/Settings/GPSDiagnostics";
 import "./App.css";
 
@@ -45,6 +46,7 @@ function MapPage() {
       {sidebarOpen && (
         <div className="sidebar-backdrop" onClick={() => setSidebarOpen(false)} />
       )}
+      <SaveWaypointModal />
     </div>
   );
 }

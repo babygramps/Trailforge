@@ -64,6 +64,11 @@ const DEFAULT_LAYERS: MapLayer[] = [
   },
 ];
 
+interface WaypointDraft {
+  lng: number;
+  lat: number;
+}
+
 interface MapState {
   mapInstance: maplibregl.Map | null;
   center: [number, number];
@@ -75,6 +80,7 @@ interface MapState {
   selectedTrackId: string | null;
   isRecording: boolean;
   recordingSession: RecordingSession | null;
+  waypointDraft: WaypointDraft | null;
 
   setMapInstance: (map: maplibregl.Map | null) => void;
   setCenter: (center: [number, number]) => void;
@@ -90,6 +96,7 @@ interface MapState {
     isRecording: boolean,
     session: RecordingSession | null
   ) => void;
+  setWaypointDraft: (draft: WaypointDraft | null) => void;
 }
 
 export const useMapStore = create<MapState>((set) => ({
@@ -103,6 +110,7 @@ export const useMapStore = create<MapState>((set) => ({
   selectedTrackId: null,
   isRecording: false,
   recordingSession: null,
+  waypointDraft: null,
 
   setMapInstance: (map) => set({ mapInstance: map }),
   setCenter: (center) => set({ center }),
@@ -144,4 +152,6 @@ export const useMapStore = create<MapState>((set) => ({
 
   setRecording: (isRecording, session) =>
     set({ isRecording, recordingSession: session }),
+
+  setWaypointDraft: (draft) => set({ waypointDraft: draft }),
 }));

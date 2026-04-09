@@ -137,6 +137,14 @@ export default function MapView() {
       setPitch(map.getPitch());
     });
 
+    // Long-press / right-click → open waypoint save form
+    map.on("contextmenu", (e) => {
+      useMapStore.getState().setWaypointDraft({
+        lng: e.lngLat.lng,
+        lat: e.lngLat.lat,
+      });
+    });
+
     map.on("load", () => {
       // User data sources
       map.addSource("user-tracks", {
@@ -359,7 +367,7 @@ async function loadTracks(map: maplibregl.Map): Promise<void> {
   }
 }
 
-async function loadWaypoints(map: maplibregl.Map): Promise<void> {
+export async function loadWaypoints(map: maplibregl.Map): Promise<void> {
   try {
     const waypoints: Waypoint[] = await apiClient.getWaypoints();
     const features = waypoints.map((w) => ({
