@@ -140,23 +140,26 @@ export default function MapView() {
       setPitch(map.getPitch());
     });
 
-    // Right-click on desktop → open waypoint save form
+    // Right-click on desktop / long-press on mobile → open waypoint save form.
+    // Must also prevent the native browser context menu so it doesn't steal focus.
     map.on("contextmenu", (e) => {
       e.preventDefault();
+      e.originalEvent.preventDefault();
       useMapStore.getState().setWaypointDraft({
         lng: e.lngLat.lng,
         lat: e.lngLat.lat,
       });
     });
+    // Belt-and-suspenders: block native context menu directly on the canvas
+    map.getCanvas().addEventListener("contextmenu", (e) => e.preventDefault());
 
     // Long-press on mobile (touchstart/touchend/touchmove)
-    // The contextmenu event doesn't fire reliably on mobile browsers,
-    // so we detect a 600ms hold with minimal finger movement.
+    // Provides a fallback for browsers where contextmenu doesn't fire on long-press.
     {
       let lpTimer: ReturnType<typeof setTimeout> | null = null;
       let startX = 0;
       let startY = 0;
-      const HOLD_MS = 600;
+      const HOLD_MS = 500;
       const MOVE_THRESHOLD = 10; // px
 
       const canvas = map.getCanvas();
@@ -166,10 +169,12 @@ export default function MapView() {
         const t = e.touches[0];
         startX = t.clientX;
         startY = t.clientY;
+        // Snapshot coordinates immediately (Touch object may be recycled)
+        const cx = t.clientX;
+        const cy = t.clientY;
         lpTimer = setTimeout(() => {
-          // Convert screen point to lngLat (unproject needs canvas-relative coords)
           const rect = canvas.getBoundingClientRect();
-          const point = map.unproject([t.clientX - rect.left, t.clientY - rect.top]);
+          const point = map.unproject([cx - rect.left, cy - rect.top]);
           useMapStore.getState().setWaypointDraft({
             lng: point.lng,
             lat: point.lat,
@@ -235,13 +240,13 @@ export default function MapView() {
         filter: ["==", ["get", "id"], ""],
       });
 
-      // Waypoint circles
+      // Waypoint circles — larger on mobile for tap targets
       map.addLayer({
         id: "waypoints-circle",
         type: "circle",
         source: "user-waypoints",
         paint: {
-          "circle-radius": 8,
+          "circle-radius": ["interpolate", ["linear"], ["zoom"], 6, 6, 14, 10],
           "circle-color": ["coalesce", ["get", "color"], "#e85d26"],
           "circle-stroke-width": 2,
           "circle-stroke-color": "#ffffff",
@@ -266,12 +271,11 @@ export default function MapView() {
         },
       });
 
-      // Click on waypoint → select it
+      // Click/tap on waypoint → select it
       const wpClickLayers = ["waypoints-circle", "waypoints-label"];
       for (const layerId of wpClickLayers) {
         map.on("click", layerId, (e) => {
           if (!e.features || e.features.length === 0) return;
-          e.originalEvent.stopPropagation();
           const props = e.features[0].properties;
           if (!props) return;
           useMapStore.getState().setSelectedWaypoint({
@@ -306,8 +310,6 @@ export default function MapView() {
       loadTracks(map);
       loadWaypoints(map);
 
-      // Auto-locate on first visit (no saved view) or if saved view
-      // is the world fallback (zoom <= 2).
       // Auto-locate on first visit (no saved view) or if saved view
       // is the world fallback (zoom <= 2).
       const shouldAutoLocate = zoom <= 2;
