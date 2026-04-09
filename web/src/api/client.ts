@@ -118,13 +118,70 @@ export class ApiError extends Error {
   }
 }
 
-// The Go backend uses snake_case JSON; map to camelCase User.
+// The Go backend uses snake_case JSON; map to camelCase on the frontend.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function mapUser(raw: any): User {
   return {
     id: raw.id,
     email: raw.email,
     displayName: raw.display_name ?? raw.displayName ?? "",
+  };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapTrack(raw: any): Track {
+  const stats = raw.stats ?? {};
+  return {
+    id: raw.id,
+    userId: raw.user_id ?? raw.userId ?? "",
+    name: raw.name ?? "",
+    activityType: raw.activity_type ?? raw.activityType ?? "hike",
+    description: raw.description ?? "",
+    geometry: raw.geometry,
+    stats: {
+      distance: stats.distance_m ?? stats.distance ?? 0,
+      duration: stats.duration_s ?? stats.duration ?? 0,
+      elevationGain: stats.elevation_gain_m ?? stats.elevationGain ?? 0,
+      elevationLoss: stats.elevation_loss_m ?? stats.elevationLoss ?? 0,
+      avgSpeed: stats.avg_speed_mps ?? stats.avgSpeed ?? 0,
+      hrZones: stats.hr_zones ?? stats.hrZones ?? null,
+    },
+    createdAt: raw.created_at ?? raw.createdAt ?? "",
+    updatedAt: raw.updated_at ?? raw.updatedAt ?? "",
+  };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapWaypoint(raw: any): Waypoint {
+  return {
+    id: raw.id,
+    userId: raw.user_id ?? raw.userId ?? "",
+    name: raw.name ?? "",
+    description: raw.description ?? "",
+    lat: raw.lat ?? 0,
+    lon: raw.lon ?? 0,
+    ele: raw.ele ?? null,
+    icon: raw.icon ?? "pin",
+    color: raw.color ?? "#FF5722",
+    createdAt: raw.created_at ?? raw.createdAt ?? "",
+    updatedAt: raw.updated_at ?? raw.updatedAt ?? "",
+  };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapRoute(raw: any): Route {
+  return {
+    id: raw.id,
+    userId: raw.user_id ?? raw.userId ?? "",
+    name: raw.name ?? "",
+    activityType: raw.activity_type ?? raw.activityType ?? "hike",
+    description: raw.description ?? "",
+    geometry: raw.geometry,
+    waypoints: raw.waypoints ?? [],
+    totalDistance: raw.total_distance ?? raw.totalDistance ?? 0,
+    estimatedDuration: raw.estimated_duration ?? raw.estimatedDuration ?? 0,
+    createdAt: raw.created_at ?? raw.createdAt ?? "",
+    updatedAt: raw.updated_at ?? raw.updatedAt ?? "",
   };
 }
 
@@ -193,26 +250,31 @@ export const apiClient = {
   },
 
   // ---- Tracks ----
-  getTracks(): Promise<Track[]> {
-    return request<Track[]>("/api/tracks");
+  async getTracks(): Promise<Track[]> {
+    // Backend returns { tracks: [...], count: N }
+    const res = await request<{ tracks: unknown[] }>("/api/tracks");
+    return (res.tracks ?? []).map(mapTrack);
   },
 
-  getTrack(id: string): Promise<Track> {
-    return request<Track>(`/api/tracks/${id}`);
+  async getTrack(id: string): Promise<Track> {
+    const raw = await request<unknown>(`/api/tracks/${id}`);
+    return mapTrack(raw);
   },
 
-  createTrack(data: Partial<Track>): Promise<Track> {
-    return request<Track>("/api/tracks", {
+  async createTrack(data: Partial<Track>): Promise<Track> {
+    const raw = await request<unknown>("/api/tracks", {
       method: "POST",
       body: JSON.stringify(data),
     });
+    return mapTrack(raw);
   },
 
-  updateTrack(id: string, data: Partial<Track>): Promise<Track> {
-    return request<Track>(`/api/tracks/${id}`, {
+  async updateTrack(id: string, data: Partial<Track>): Promise<Track> {
+    const raw = await request<unknown>(`/api/tracks/${id}`, {
       method: "PUT",
       body: JSON.stringify(data),
     });
+    return mapTrack(raw);
   },
 
   deleteTrack(id: string): Promise<void> {
@@ -243,19 +305,23 @@ export const apiClient = {
   },
 
   // ---- Routes ----
-  getRoutes(): Promise<Route[]> {
-    return request<Route[]>("/api/routes");
+  async getRoutes(): Promise<Route[]> {
+    // Backend returns { routes: [...], count: N }
+    const res = await request<{ routes: unknown[] }>("/api/routes");
+    return (res.routes ?? []).map(mapRoute);
   },
 
-  getRoute(id: string): Promise<Route> {
-    return request<Route>(`/api/routes/${id}`);
+  async getRoute(id: string): Promise<Route> {
+    const raw = await request<unknown>(`/api/routes/${id}`);
+    return mapRoute(raw);
   },
 
-  createRoute(data: Partial<Route>): Promise<Route> {
-    return request<Route>("/api/routes", {
+  async createRoute(data: Partial<Route>): Promise<Route> {
+    const raw = await request<unknown>("/api/routes", {
       method: "POST",
       body: JSON.stringify(data),
     });
+    return mapRoute(raw);
   },
 
   getDirections(
@@ -269,22 +335,26 @@ export const apiClient = {
   },
 
   // ---- Waypoints ----
-  getWaypoints(): Promise<Waypoint[]> {
-    return request<Waypoint[]>("/api/waypoints");
+  async getWaypoints(): Promise<Waypoint[]> {
+    // Backend returns { waypoints: [...], count: N }
+    const res = await request<{ waypoints: unknown[] }>("/api/waypoints");
+    return (res.waypoints ?? []).map(mapWaypoint);
   },
 
-  createWaypoint(data: Partial<Waypoint>): Promise<Waypoint> {
-    return request<Waypoint>("/api/waypoints", {
+  async createWaypoint(data: Partial<Waypoint>): Promise<Waypoint> {
+    const raw = await request<unknown>("/api/waypoints", {
       method: "POST",
       body: JSON.stringify(data),
     });
+    return mapWaypoint(raw);
   },
 
-  updateWaypoint(id: string, data: Partial<Waypoint>): Promise<Waypoint> {
-    return request<Waypoint>(`/api/waypoints/${id}`, {
+  async updateWaypoint(id: string, data: Partial<Waypoint>): Promise<Waypoint> {
+    const raw = await request<unknown>(`/api/waypoints/${id}`, {
       method: "PUT",
       body: JSON.stringify(data),
     });
+    return mapWaypoint(raw);
   },
 
   deleteWaypoint(id: string): Promise<void> {
