@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import type maplibregl from "maplibre-gl";
 import type { MapLayer, LayerPreset, RecordingSession } from "../types";
 
 const DEFAULT_LAYERS: MapLayer[] = [
@@ -64,6 +65,7 @@ const DEFAULT_LAYERS: MapLayer[] = [
 ];
 
 interface MapState {
+  mapInstance: maplibregl.Map | null;
   center: [number, number];
   zoom: number;
   bearing: number;
@@ -74,6 +76,7 @@ interface MapState {
   isRecording: boolean;
   recordingSession: RecordingSession | null;
 
+  setMapInstance: (map: maplibregl.Map | null) => void;
   setCenter: (center: [number, number]) => void;
   setZoom: (zoom: number) => void;
   setBearing: (bearing: number) => void;
@@ -90,6 +93,7 @@ interface MapState {
 }
 
 export const useMapStore = create<MapState>((set) => ({
+  mapInstance: null,
   center: [-119.5383, 37.8651], // Yosemite default
   zoom: 10,
   bearing: 0,
@@ -100,6 +104,7 @@ export const useMapStore = create<MapState>((set) => ({
   isRecording: false,
   recordingSession: null,
 
+  setMapInstance: (map) => set({ mapInstance: map }),
   setCenter: (center) => set({ center }),
   setZoom: (zoom) => set({ zoom }),
   setBearing: (bearing) => set({ bearing }),

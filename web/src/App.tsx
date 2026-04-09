@@ -6,6 +6,7 @@ import TrackList from "./components/Tracks/TrackList";
 import RecordingControls from "./components/Recording/RecordingControls";
 import LayerManager from "./components/Map/LayerManager";
 import LayerPresets from "./components/Map/LayerPresets";
+import MapSearch from "./components/Map/MapSearch";
 import GPSDiagnostics from "./components/Settings/GPSDiagnostics";
 import "./App.css";
 
@@ -15,6 +16,7 @@ function MapPage() {
   return (
     <div className="map-page">
       <MapView />
+      <MapSearch />
       <button
         className="layers-toggle-btn"
         onClick={() => setSidebarOpen((o) => !o)}

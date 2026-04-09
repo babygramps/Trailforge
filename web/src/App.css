@@ -74,6 +74,137 @@
   height: 100%;
 }
 
+/* ---- Map Search ---- */
+.map-search {
+  position: absolute;
+  top: 10px;
+  left: 56px;
+  right: 50px;
+  z-index: 10;
+  max-width: 420px;
+}
+
+@media (min-width: 768px) {
+  .map-search {
+    left: 280px;
+    right: auto;
+    width: 340px;
+  }
+}
+
+.search-input-wrap {
+  display: flex;
+  align-items: center;
+  background: rgba(15, 23, 42, 0.92);
+  border-radius: 8px;
+  padding: 0 10px;
+  height: 40px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(8px);
+}
+
+.search-icon {
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.search-input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  color: #e2e8f0;
+  font-size: 0.85rem;
+  padding: 0 8px;
+  min-width: 0;
+}
+
+.search-input::placeholder {
+  color: #64748b;
+}
+
+.search-clear {
+  color: #94a3b8;
+  font-size: 1.2rem;
+  line-height: 1;
+  padding: 0 4px;
+  flex-shrink: 0;
+}
+
+.search-clear:hover {
+  color: #e2e8f0;
+}
+
+.search-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid #475569;
+  border-top-color: #22c55e;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.search-results {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 4px 0;
+  background: rgba(15, 23, 42, 0.96);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(12px);
+  overflow: hidden;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.search-result-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.search-result-item:hover {
+  background: rgba(51, 65, 85, 0.6);
+}
+
+.result-icon {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+  width: 24px;
+  text-align: center;
+}
+
+.result-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.result-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #e2e8f0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.result-subtitle {
+  font-size: 0.72rem;
+  color: #94a3b8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* ---- Layers toggle button (mobile) ---- */
 .layers-toggle-btn {
   position: absolute;

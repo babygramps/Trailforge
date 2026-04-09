@@ -60,6 +60,7 @@ export default function MapView() {
     pitch,
     layers,
     selectedTrackId,
+    setMapInstance,
     setCenter,
     setZoom,
     setBearing,
@@ -209,10 +210,12 @@ export default function MapView() {
     });
 
     mapRef.current = map;
+    setMapInstance(map);
 
     return () => {
       map.remove();
       mapRef.current = null;
+      setMapInstance(null);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
