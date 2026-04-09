@@ -37,6 +37,7 @@ func (h *AuthHandler) Register(g *echo.Group) {
 	g.POST("/register", h.RegisterUser)
 	g.POST("/login", h.Login)
 	g.POST("/refresh", h.Refresh)
+	g.GET("/me", h.Me)
 }
 
 // RegisterUser creates a new user account and returns JWT tokens.
@@ -140,6 +141,21 @@ func (h *AuthHandler) Refresh(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, tokens)
+}
+
+// Me returns the currently authenticated user.
+func (h *AuthHandler) Me(c echo.Context) error {
+	userID := middleware.GetUserID(c)
+	if userID == "" {
+		return echo.NewHTTPError(http.StatusUnauthorized, "not authenticated")
+	}
+
+	user, err := h.users.GetByID(c.Request().Context(), userID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusNotFound, "user not found")
+	}
+
+	return c.JSON(http.StatusOK, user)
 }
 
 // generateTokens creates a short-lived access token and a long-lived refresh token.

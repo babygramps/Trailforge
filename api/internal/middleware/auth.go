@@ -24,6 +24,7 @@ func JWTAuth(secret string) echo.MiddlewareFunc {
 		"/api/health":        true,
 		"/api/auth/register": true,
 		"/api/auth/login":    true,
+		"/api/auth/refresh":  true,
 	}
 
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
