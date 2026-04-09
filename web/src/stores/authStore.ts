@@ -37,8 +37,13 @@ export const useAuthStore = create<AuthState>((set) => ({
       const user = await apiClient.register(email, password, displayName);
       set({ user, loading: false });
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Registration failed";
-      set({ loading: false, error: parseError(message) });
+      let message = err instanceof Error ? err.message : "Registration failed";
+      message = parseError(message);
+      // 409 = email already taken — nudge user to sign in instead
+      if (err instanceof Error && "status" in err && (err as { status: number }).status === 409) {
+        message = "That email is already registered. Try signing in instead.";
+      }
+      set({ loading: false, error: message });
       throw err;
     }
   },

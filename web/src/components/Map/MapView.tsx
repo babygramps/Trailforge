@@ -106,6 +106,8 @@ export default function MapView() {
         name: "TrailForge",
         sources,
         layers: baseLayers,
+        glyphs:
+          "https://demotiles.maplibre.org/font/{fontstack}/{range}.pbf",
       },
       center: center,
       zoom: zoom,
