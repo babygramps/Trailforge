@@ -10,6 +10,7 @@ import LayerPresets from "./components/Map/LayerPresets";
 import MapSearch from "./components/Map/MapSearch";
 import SaveWaypointModal from "./components/Map/SaveWaypointModal";
 import OfflineDownload from "./components/Map/OfflineDownload";
+import ResetPassword from "./components/Auth/ResetPassword";
 import GPSDiagnostics from "./components/Settings/GPSDiagnostics";
 import OfflineRegions from "./components/Settings/OfflineRegions";
 import { useAuthStore } from "./stores/authStore";
@@ -120,6 +121,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route element={<AppShell />}>
           <Route path="/" element={<MapPage />} />
           <Route path="/tracks" element={<AuthRequiredPage><TrackList /></AuthRequiredPage>} />

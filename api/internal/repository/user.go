@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 
@@ -131,4 +132,41 @@ func (r *UserRepository) Delete(ctx context.Context, id string) error {
 		return fmt.Errorf("user not found")
 	}
 	return nil
+}
+
+// CreatePasswordResetToken stores a reset token for the given user.
+func (r *UserRepository) CreatePasswordResetToken(ctx context.Context, userID, token string, expiresAt time.Time) error {
+	// Invalidate any existing unused tokens for this user
+	_, _ = r.db.Pool.Exec(ctx,
+		`UPDATE password_reset_tokens SET used = TRUE WHERE user_id = $1 AND used = FALSE`, userID)
+
+	_, err := r.db.Pool.Exec(ctx,
+		`INSERT INTO password_reset_tokens (user_id, token, expires_at) VALUES ($1, $2, $3)`,
+		userID, token, expiresAt)
+	if err != nil {
+		return fmt.Errorf("creating reset token: %w", err)
+	}
+	return nil
+}
+
+// ValidatePasswordResetToken checks that a token is valid and returns the user ID.
+func (r *UserRepository) ValidatePasswordResetToken(ctx context.Context, token string) (string, error) {
+	var userID string
+	err := r.db.Pool.QueryRow(ctx,
+		`SELECT user_id FROM password_reset_tokens
+		 WHERE token = $1 AND used = FALSE AND expires_at > NOW()`, token).Scan(&userID)
+	if err == pgx.ErrNoRows {
+		return "", fmt.Errorf("invalid or expired reset token")
+	}
+	if err != nil {
+		return "", fmt.Errorf("validating reset token: %w", err)
+	}
+	return userID, nil
+}
+
+// ConsumePasswordResetToken marks the token as used.
+func (r *UserRepository) ConsumePasswordResetToken(ctx context.Context, token string) error {
+	_, err := r.db.Pool.Exec(ctx,
+		`UPDATE password_reset_tokens SET used = TRUE WHERE token = $1`, token)
+	return err
 }

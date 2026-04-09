@@ -1,6 +1,9 @@
 package handler
 
 import (
+	"crypto/rand"
+	"encoding/hex"
+	"log"
 	"net/http"
 	"time"
 
@@ -38,6 +41,8 @@ func (h *AuthHandler) Register(g *echo.Group) {
 	g.POST("/login", h.Login)
 	g.POST("/refresh", h.Refresh)
 	g.GET("/me", h.Me)
+	g.POST("/forgot-password", h.ForgotPassword)
+	g.POST("/reset-password", h.ResetPassword)
 }
 
 // RegisterUser creates a new user account and returns JWT tokens.
@@ -156,6 +161,101 @@ func (h *AuthHandler) Me(c echo.Context) error {
 	}
 
 	return c.JSON(http.StatusOK, user)
+}
+
+// ForgotPassword generates a password reset token. Since no email service is
+// configured, the reset link is logged to the server console.
+func (h *AuthHandler) ForgotPassword(c echo.Context) error {
+	var req model.ForgotPasswordRequest
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid request body")
+	}
+	if req.Email == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "email is required")
+	}
+
+	user, err := h.users.GetByEmail(c.Request().Context(), req.Email)
+	if err != nil {
+		// Don't reveal whether the email exists — always return success
+		return c.JSON(http.StatusOK, map[string]string{
+			"message": "If that email is registered, a reset link has been generated. Check server logs.",
+		})
+	}
+
+	// Generate a secure random token
+	tokenBytes := make([]byte, 32)
+	if _, err := rand.Read(tokenBytes); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to generate token")
+	}
+	token := hex.EncodeToString(tokenBytes)
+	expiresAt := time.Now().Add(1 * time.Hour)
+
+	if err := h.users.CreatePasswordResetToken(c.Request().Context(), user.ID, token, expiresAt); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to create reset token")
+	}
+
+	// Log the reset link (no email service configured)
+	scheme := "https"
+	if c.Request().TLS == nil && c.Request().Header.Get("X-Forwarded-Proto") == "" {
+		scheme = "http"
+	}
+	resetURL := scheme + "://" + c.Request().Host + "/reset-password?token=" + token
+	log.Printf("[AUTH] Password reset requested for %s\n  Reset URL: %s\n  Expires: %s",
+		user.Email, resetURL, expiresAt.Format(time.RFC3339))
+
+	return c.JSON(http.StatusOK, map[string]string{
+		"message": "If that email is registered, a reset link has been generated. Check server logs.",
+	})
+}
+
+// ResetPassword validates the token and sets a new password.
+func (h *AuthHandler) ResetPassword(c echo.Context) error {
+	var req model.ResetPasswordRequest
+	if err := c.Bind(&req); err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid request body")
+	}
+	if req.Token == "" || req.NewPassword == "" {
+		return echo.NewHTTPError(http.StatusBadRequest, "token and new_password are required")
+	}
+	if len(req.NewPassword) < 8 {
+		return echo.NewHTTPError(http.StatusBadRequest, "password must be at least 8 characters")
+	}
+
+	userID, err := h.users.ValidatePasswordResetToken(c.Request().Context(), req.Token)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "invalid or expired reset token")
+	}
+
+	user, err := h.users.GetByID(c.Request().Context(), userID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, "user not found")
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to hash password")
+	}
+	user.PasswordHash = string(hash)
+
+	if err := h.users.Update(c.Request().Context(), user); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to update password")
+	}
+
+	// Mark the token as used
+	_ = h.users.ConsumePasswordResetToken(c.Request().Context(), req.Token)
+
+	// Return tokens so the user is logged in after reset
+	tokens, err := h.generateTokens(user.ID)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "failed to generate tokens")
+	}
+
+	log.Printf("[AUTH] Password reset completed for %s", user.Email)
+
+	return c.JSON(http.StatusOK, map[string]any{
+		"user":   user,
+		"tokens": tokens,
+	})
 }
 
 // generateTokens creates a short-lived access token and a long-lived refresh token.

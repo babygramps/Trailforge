@@ -175,6 +175,23 @@ export const apiClient = {
     return accessToken !== null;
   },
 
+  async forgotPassword(email: string): Promise<string> {
+    const res = await request<{ message: string }>("/api/auth/forgot-password", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    });
+    return res.message;
+  },
+
+  async resetPassword(token: string, newPassword: string): Promise<User> {
+    const res = await request<AuthResponse>("/api/auth/reset-password", {
+      method: "POST",
+      body: JSON.stringify({ token, new_password: newPassword }),
+    });
+    setTokens(res.tokens);
+    return mapUser(res.user);
+  },
+
   // ---- Tracks ----
   getTracks(): Promise<Track[]> {
     return request<Track[]>("/api/tracks");

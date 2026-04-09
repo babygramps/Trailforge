@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"encoding/json"
+	"time"
 
 	"github.com/babygramps/trailforge/internal/model"
 )
@@ -28,6 +29,9 @@ type UserRepo interface {
 	List(ctx context.Context, limit, offset int) ([]model.User, error)
 	Update(ctx context.Context, u *model.User) error
 	Delete(ctx context.Context, id string) error
+	CreatePasswordResetToken(ctx context.Context, userID, token string, expiresAt time.Time) error
+	ValidatePasswordResetToken(ctx context.Context, token string) (string, error)
+	ConsumePasswordResetToken(ctx context.Context, token string) error
 }
 
 // WaypointRepo defines the interface for waypoint persistence operations.

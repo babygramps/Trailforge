@@ -21,10 +21,12 @@ type Claims struct {
 // the user ID in the request context. Paths in the skip list bypass authentication.
 func JWTAuth(secret string) echo.MiddlewareFunc {
 	skipPaths := map[string]bool{
-		"/api/health":        true,
-		"/api/auth/register": true,
-		"/api/auth/login":    true,
-		"/api/auth/refresh":  true,
+		"/api/health":              true,
+		"/api/auth/register":       true,
+		"/api/auth/login":          true,
+		"/api/auth/refresh":        true,
+		"/api/auth/forgot-password": true,
+		"/api/auth/reset-password":  true,
 	}
 
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
