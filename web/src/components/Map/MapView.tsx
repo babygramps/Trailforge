@@ -266,6 +266,43 @@ export default function MapView() {
         },
       });
 
+      // Click on waypoint → select it
+      const wpClickLayers = ["waypoints-circle", "waypoints-label"];
+      for (const layerId of wpClickLayers) {
+        map.on("click", layerId, (e) => {
+          if (!e.features || e.features.length === 0) return;
+          e.originalEvent.stopPropagation();
+          const props = e.features[0].properties;
+          if (!props) return;
+          useMapStore.getState().setSelectedWaypoint({
+            id: props.id,
+            name: props.name ?? "",
+            description: props.description ?? "",
+            lat: Number(props.lat) || 0,
+            lon: Number(props.lon) || 0,
+            ele: Number(props.ele) || 0,
+            icon: props.icon ?? "pin",
+            color: props.color ?? "#FF5722",
+          });
+        });
+        map.on("mouseenter", layerId, () => {
+          map.getCanvas().style.cursor = "pointer";
+        });
+        map.on("mouseleave", layerId, () => {
+          map.getCanvas().style.cursor = "";
+        });
+      }
+
+      // Click on empty map → deselect waypoint
+      map.on("click", (e) => {
+        const features = map.queryRenderedFeatures(e.point, {
+          layers: wpClickLayers.filter((l) => map.getLayer(l)),
+        });
+        if (!features.length) {
+          useMapStore.getState().setSelectedWaypoint(null);
+        }
+      });
+
       loadTracks(map);
       loadWaypoints(map);
 
@@ -496,6 +533,10 @@ export async function loadWaypoints(map: maplibregl.Map): Promise<void> {
       properties: {
         id: w.id,
         name: w.name,
+        description: w.description ?? "",
+        lat: w.lat,
+        lon: w.lon,
+        ele: w.ele ?? 0,
         icon: w.icon,
         color: w.color,
       },

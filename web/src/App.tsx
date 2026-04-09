@@ -9,6 +9,7 @@ import LayerManager from "./components/Map/LayerManager";
 import LayerPresets from "./components/Map/LayerPresets";
 import MapSearch from "./components/Map/MapSearch";
 import SaveWaypointModal from "./components/Map/SaveWaypointModal";
+import WaypointPopup from "./components/Map/WaypointPopup";
 import OfflineDownload from "./components/Map/OfflineDownload";
 import ResetPassword from "./components/Auth/ResetPassword";
 import GPSDiagnostics from "./components/Settings/GPSDiagnostics";
@@ -53,6 +54,7 @@ function MapPage() {
       )}
       <OfflineDownload />
       <SaveWaypointModal />
+      <WaypointPopup />
     </div>
   );
 }

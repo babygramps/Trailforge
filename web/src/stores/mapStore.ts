@@ -107,6 +107,17 @@ interface WaypointDraft {
   lat: number;
 }
 
+export interface SelectedWaypoint {
+  id: string;
+  name: string;
+  description: string;
+  lat: number;
+  lon: number;
+  ele: number;
+  icon: string;
+  color: string;
+}
+
 interface MapState {
   mapInstance: maplibregl.Map | null;
   center: [number, number];
@@ -116,6 +127,7 @@ interface MapState {
   layers: MapLayer[];
   activePreset: string | null;
   selectedTrackId: string | null;
+  selectedWaypoint: SelectedWaypoint | null;
   isRecording: boolean;
   recordingSession: RecordingSession | null;
   waypointDraft: WaypointDraft | null;
@@ -130,6 +142,7 @@ interface MapState {
   setLayerOpacity: (layerId: string, opacity: number) => void;
   applyPreset: (preset: LayerPreset) => void;
   setSelectedTrack: (trackId: string | null) => void;
+  setSelectedWaypoint: (wp: SelectedWaypoint | null) => void;
   setRecording: (
     isRecording: boolean,
     session: RecordingSession | null
@@ -146,6 +159,7 @@ export const useMapStore = create<MapState>((set) => ({
   layers: DEFAULT_LAYERS,
   activePreset: null,
   selectedTrackId: null,
+  selectedWaypoint: null,
   isRecording: false,
   recordingSession: null,
   waypointDraft: null,
@@ -207,6 +221,7 @@ export const useMapStore = create<MapState>((set) => ({
     })),
 
   setSelectedTrack: (trackId) => set({ selectedTrackId: trackId }),
+  setSelectedWaypoint: (wp) => set({ selectedWaypoint: wp }),
 
   setRecording: (isRecording, session) =>
     set({ isRecording, recordingSession: session }),
