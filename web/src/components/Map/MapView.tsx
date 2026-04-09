@@ -265,6 +265,23 @@ export default function MapView() {
 
       loadTracks(map);
       loadWaypoints(map);
+
+      // Auto-locate: fly to user's position on first load
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (geo) => {
+            map.flyTo({
+              center: [geo.coords.longitude, geo.coords.latitude],
+              zoom: 14,
+              duration: 1200,
+            });
+          },
+          () => {
+            // Permission denied or unavailable — stay on default view
+          },
+          { enableHighAccuracy: false, maximumAge: 60_000, timeout: 8_000 }
+        );
+      }
     });
 
     mapRef.current = map;

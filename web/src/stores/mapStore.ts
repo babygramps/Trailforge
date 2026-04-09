@@ -101,8 +101,8 @@ interface MapState {
 
 export const useMapStore = create<MapState>((set) => ({
   mapInstance: null,
-  center: [-119.5383, 37.8651], // Yosemite default
-  zoom: 10,
+  center: [0, 20], // World fallback — overridden by geolocation on load
+  zoom: 2,
   bearing: 0,
   pitch: 0,
   layers: DEFAULT_LAYERS,
