@@ -205,6 +205,17 @@
   text-overflow: ellipsis;
 }
 
+/* ---- Search Pin Marker ---- */
+.search-pin {
+  cursor: pointer;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+  transition: transform 0.15s;
+}
+
+.search-pin:hover {
+  transform: scale(1.1);
+}
+
 /* ---- Layers toggle button (mobile) ---- */
 .layers-toggle-btn {
   position: absolute;

@@ -4,15 +4,47 @@ import userEvent from "@testing-library/user-event";
 import MapSearch from "./MapSearch";
 import { useMapStore } from "../../stores/mapStore";
 
-vi.mock("maplibre-gl", () => ({
-  default: {
+vi.mock("maplibre-gl", () => {
+  const markerProto = {
+    setLngLat: vi.fn().mockReturnThis(),
+    setPopup: vi.fn().mockReturnThis(),
+    addTo: vi.fn().mockReturnThis(),
+    togglePopup: vi.fn(),
+    remove: vi.fn(),
+  };
+
+  const popupProto = {
+    setText: vi.fn().mockReturnThis(),
+  };
+
+  class MockMarker {
+    setLngLat = markerProto.setLngLat;
+    setPopup = markerProto.setPopup;
+    addTo = markerProto.addTo;
+    togglePopup = markerProto.togglePopup;
+    remove = markerProto.remove;
+  }
+
+  class MockPopup {
+    setText = popupProto.setText;
+  }
+
+  return {
+    default: {
+      Map: vi.fn(),
+      NavigationControl: vi.fn(),
+      ScaleControl: vi.fn(),
+      GeolocateControl: vi.fn(),
+      Marker: MockMarker,
+      Popup: MockPopup,
+    },
     Map: vi.fn(),
-    NavigationControl: vi.fn(),
-    ScaleControl: vi.fn(),
-    GeolocateControl: vi.fn(),
-  },
-  Map: vi.fn(),
-}));
+    Marker: MockMarker,
+    Popup: MockPopup,
+    __markerProto: markerProto,
+    __popupProto: popupProto,
+  };
+});
 
 const mockPhotonResponse = {
   type: "FeatureCollection",
@@ -45,10 +77,23 @@ const mockPhotonResponse = {
 };
 
 describe("MapSearch", () => {
-  beforeEach(() => {
+  let markerMock: Record<string, ReturnType<typeof vi.fn>>;
+
+  beforeEach(async () => {
     useMapStore.setState(useMapStore.getInitialState());
     vi.useFakeTimers({ shouldAdvanceTime: true });
     global.fetch = vi.fn();
+
+    // Access the shared mock instances from the vi.mock factory
+    const mgl = await import("maplibre-gl") as unknown as {
+      __markerProto: Record<string, ReturnType<typeof vi.fn>>;
+      __popupProto: Record<string, ReturnType<typeof vi.fn>>;
+    };
+    markerMock = mgl.__markerProto;
+    for (const fn of Object.values(markerMock)) fn.mockClear().mockReturnThis();
+    markerMock.togglePopup.mockClear();
+    markerMock.remove.mockClear();
+    for (const fn of Object.values(mgl.__popupProto)) fn.mockClear().mockReturnThis();
   });
 
   afterEach(() => {
@@ -120,6 +165,10 @@ describe("MapSearch", () => {
 
     // Yosemite Valley has extent, so fitBounds should be called
     expect(fitBounds).toHaveBeenCalledTimes(1);
+    // Pin should be placed at result coordinates
+    expect(markerMock.setLngLat).toHaveBeenCalledWith([-119.59, 37.75]);
+    expect(markerMock.addTo).toHaveBeenCalledTimes(1);
+    expect(markerMock.togglePopup).toHaveBeenCalledTimes(1);
     // Dropdown should close
     expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
   });
@@ -178,6 +227,39 @@ describe("MapSearch", () => {
 
     expect(screen.queryByRole("listbox")).not.toBeInTheDocument();
     expect(screen.getByPlaceholderText("Search trails, places...")).toHaveValue("");
+  });
+
+  it("clear button removes the search pin", async () => {
+    const flyTo = vi.fn();
+    const fitBounds = vi.fn();
+    useMapStore.setState({
+      mapInstance: { flyTo, fitBounds } as unknown as maplibregl.Map,
+    });
+
+    const singleResult = {
+      type: "FeatureCollection",
+      features: [mockPhotonResponse.features[1]],
+    };
+
+    (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve(singleResult),
+    });
+
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    render(<MapSearch />);
+
+    await user.type(screen.getByPlaceholderText("Search trails, places..."), "Half Dome");
+
+    await waitFor(() => {
+      expect(screen.getByText("Half Dome Trail")).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByText("Half Dome Trail"));
+    expect(markerMock.addTo).toHaveBeenCalledTimes(1);
+
+    await user.click(screen.getByLabelText("Clear search"));
+    expect(markerMock.remove).toHaveBeenCalledTimes(1);
   });
 
   it("does not search for queries shorter than 2 chars", async () => {

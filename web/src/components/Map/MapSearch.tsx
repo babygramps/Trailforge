@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import maplibregl from "maplibre-gl";
 import { useMapStore } from "../../stores/mapStore";
 
 interface PhotonFeature {
@@ -53,6 +54,7 @@ export default function MapSearch() {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const markerRef = useRef<maplibregl.Marker | null>(null);
 
   const search = useCallback(async (q: string) => {
     if (q.length < 2) {
@@ -87,6 +89,37 @@ export default function MapSearch() {
     timerRef.current = setTimeout(() => search(value), 300);
   };
 
+  const removeMarker = useCallback(() => {
+    if (markerRef.current) {
+      markerRef.current.remove();
+      markerRef.current = null;
+    }
+  }, []);
+
+  const placeMarker = useCallback((lng: number, lat: number, title: string) => {
+    const map = useMapStore.getState().mapInstance;
+    if (!map) return;
+
+    removeMarker();
+
+    const el = document.createElement("div");
+    el.className = "search-pin";
+    el.innerHTML = `<svg width="28" height="40" viewBox="0 0 28 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M14 0C6.27 0 0 6.27 0 14c0 10.5 14 26 14 26s14-15.5 14-26C28 6.27 21.73 0 14 0z" fill="#ef4444"/>
+      <circle cx="14" cy="14" r="6" fill="#fff"/>
+    </svg>`;
+
+    const popup = new maplibregl.Popup({ offset: [0, -36], closeButton: false })
+      .setText(title);
+
+    markerRef.current = new maplibregl.Marker({ element: el, anchor: "bottom" })
+      .setLngLat([lng, lat])
+      .setPopup(popup)
+      .addTo(map);
+
+    markerRef.current.togglePopup();
+  }, [removeMarker]);
+
   const selectResult = (feature: PhotonFeature) => {
     const map = useMapStore.getState().mapInstance;
     if (!map) return;
@@ -95,7 +128,6 @@ export default function MapSearch() {
     const extent = feature.properties.extent;
 
     if (extent) {
-      // extent is [west, south, east, north]
       map.fitBounds(
         [
           [extent[0], extent[1]],
@@ -107,6 +139,7 @@ export default function MapSearch() {
       map.flyTo({ center: [lng, lat], zoom: 15, duration: 1200 });
     }
 
+    placeMarker(lng, lat, feature.properties.name || "Search result");
     setQuery(feature.properties.name || "");
     setOpen(false);
     inputRef.current?.blur();
@@ -116,6 +149,7 @@ export default function MapSearch() {
     setQuery("");
     setResults([]);
     setOpen(false);
+    removeMarker();
     inputRef.current?.focus();
   };
 
