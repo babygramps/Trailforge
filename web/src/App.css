@@ -8,6 +8,11 @@
   background: #0f172a;
 }
 
+.auth-required-page {
+  height: 100%;
+  overflow-y: auto;
+}
+
 .auth-screen {
   display: flex;
   align-items: center;

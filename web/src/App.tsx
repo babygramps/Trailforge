@@ -53,6 +53,20 @@ function MapPage() {
   );
 }
 
+function AuthRequiredPage({ children }: { children: React.ReactNode }) {
+  const user = useAuthStore((s) => s.user);
+
+  if (!user) {
+    return (
+      <div className="auth-required-page">
+        <AuthScreen />
+      </div>
+    );
+  }
+
+  return <>{children}</>;
+}
+
 function SettingsPage() {
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
@@ -77,9 +91,7 @@ function SettingsPage() {
             </button>
           </div>
         ) : (
-          <p className="settings-placeholder">
-            Not signed in.
-          </p>
+          <AuthScreen />
         )}
       </div>
 
@@ -101,33 +113,19 @@ function SettingsPage() {
 }
 
 export default function App() {
-  const user = useAuthStore((s) => s.user);
-  const loading = useAuthStore((s) => s.loading);
   const restoreSession = useAuthStore((s) => s.restoreSession);
 
   useEffect(() => {
     restoreSession();
   }, [restoreSession]);
 
-  if (loading && !user) {
-    return (
-      <div className="auth-loading">
-        <div className="search-spinner" />
-      </div>
-    );
-  }
-
-  if (!user) {
-    return <AuthScreen />;
-  }
-
   return (
     <BrowserRouter>
       <Routes>
         <Route element={<AppShell />}>
           <Route path="/" element={<MapPage />} />
-          <Route path="/tracks" element={<TrackList />} />
-          <Route path="/record" element={<RecordingControls />} />
+          <Route path="/tracks" element={<AuthRequiredPage><TrackList /></AuthRequiredPage>} />
+          <Route path="/record" element={<AuthRequiredPage><RecordingControls /></AuthRequiredPage>} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>
       </Routes>
