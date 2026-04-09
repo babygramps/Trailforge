@@ -11,7 +11,7 @@ let refreshCallCount = 0;
 const server = setupServer(
   // Default handlers
   http.post('/api/auth/login', async () => {
-    return HttpResponse.json(mockAuthTokens);
+    return HttpResponse.json({ user: mockUser, tokens: mockAuthTokens });
   }),
   http.get('/api/auth/me', () => {
     return HttpResponse.json(mockUser);

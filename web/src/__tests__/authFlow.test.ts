@@ -8,7 +8,7 @@ const mockTokens = {
   refresh_token: 'test-refresh-token-fresh',
 };
 
-const mockUser = {
+const mockUserApi = {
   id: 'user-123',
   email: 'auth@test.trailforge.io',
   display_name: 'Auth Tester',
@@ -16,13 +16,10 @@ const mockUser = {
 
 const server = setupServer(
   http.post('/api/auth/register', () => {
-    return HttpResponse.json(mockTokens);
+    return HttpResponse.json({ user: mockUserApi, tokens: mockTokens });
   }),
   http.post('/api/auth/login', () => {
-    return HttpResponse.json(mockTokens);
-  }),
-  http.get('/api/auth/me', () => {
-    return HttpResponse.json(mockUser);
+    return HttpResponse.json({ user: mockUserApi, tokens: mockTokens });
   }),
   http.post('/api/auth/refresh', () => {
     return HttpResponse.json({

@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import AppShell from "./components/Layout/AppShell";
+import AuthScreen from "./components/Auth/AuthScreen";
 import MapView from "./components/Map/MapView";
 import TrackList from "./components/Tracks/TrackList";
 import RecordingControls from "./components/Recording/RecordingControls";
@@ -9,6 +10,7 @@ import LayerPresets from "./components/Map/LayerPresets";
 import MapSearch from "./components/Map/MapSearch";
 import SaveWaypointModal from "./components/Map/SaveWaypointModal";
 import GPSDiagnostics from "./components/Settings/GPSDiagnostics";
+import { useAuthStore } from "./stores/authStore";
 import "./App.css";
 
 function MapPage() {
@@ -52,16 +54,37 @@ function MapPage() {
 }
 
 function SettingsPage() {
+  const user = useAuthStore((s) => s.user);
+  const logout = useAuthStore((s) => s.logout);
+
   return (
     <div className="settings-page">
       <h2>Settings</h2>
-      <GPSDiagnostics />
+
       <div className="settings-section">
         <h3>Account</h3>
-        <p className="settings-placeholder">
-          Account management coming soon.
-        </p>
+        {user ? (
+          <div className="account-info">
+            <div className="account-avatar">
+              {user.displayName.charAt(0).toUpperCase()}
+            </div>
+            <div className="account-details">
+              <span className="account-name">{user.displayName}</span>
+              <span className="account-email">{user.email}</span>
+            </div>
+            <button className="logout-btn" onClick={logout}>
+              Sign Out
+            </button>
+          </div>
+        ) : (
+          <p className="settings-placeholder">
+            Not signed in.
+          </p>
+        )}
       </div>
+
+      <GPSDiagnostics />
+
       <div className="settings-section">
         <h3>Offline Maps</h3>
         <p className="settings-placeholder">
@@ -78,6 +101,26 @@ function SettingsPage() {
 }
 
 export default function App() {
+  const user = useAuthStore((s) => s.user);
+  const loading = useAuthStore((s) => s.loading);
+  const restoreSession = useAuthStore((s) => s.restoreSession);
+
+  useEffect(() => {
+    restoreSession();
+  }, [restoreSession]);
+
+  if (loading && !user) {
+    return (
+      <div className="auth-loading">
+        <div className="search-spinner" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <AuthScreen />;
+  }
+
   return (
     <BrowserRouter>
       <Routes>

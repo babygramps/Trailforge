@@ -7,6 +7,8 @@ import type {
   GPSPoint,
 } from "../types";
 
+const TOKEN_KEY = "tf_tokens";
+
 let accessToken: string | null = null;
 let refreshToken: string | null = null;
 let refreshPromise: Promise<void> | null = null;
@@ -14,12 +16,38 @@ let refreshPromise: Promise<void> | null = null;
 function setTokens(tokens: AuthTokens): void {
   accessToken = tokens.access_token;
   refreshToken = tokens.refresh_token;
+  try {
+    localStorage.setItem(TOKEN_KEY, JSON.stringify(tokens));
+  } catch {
+    // Storage unavailable (private browsing, etc.)
+  }
 }
 
 function clearTokens(): void {
   accessToken = null;
   refreshToken = null;
+  try {
+    localStorage.removeItem(TOKEN_KEY);
+  } catch {
+    // ignore
+  }
 }
+
+function restoreTokens(): void {
+  try {
+    const raw = localStorage.getItem(TOKEN_KEY);
+    if (raw) {
+      const tokens: AuthTokens = JSON.parse(raw);
+      accessToken = tokens.access_token;
+      refreshToken = tokens.refresh_token;
+    }
+  } catch {
+    // corrupt or unavailable
+  }
+}
+
+// Restore tokens on module load
+restoreTokens();
 
 async function request<T>(
   path: string,
@@ -90,15 +118,31 @@ export class ApiError extends Error {
   }
 }
 
+// The Go backend uses snake_case JSON; map to camelCase User.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function mapUser(raw: any): User {
+  return {
+    id: raw.id,
+    email: raw.email,
+    displayName: raw.display_name ?? raw.displayName ?? "",
+  };
+}
+
+// Response shape from login/register endpoints
+interface AuthResponse {
+  user: unknown;
+  tokens: AuthTokens;
+}
+
 export const apiClient = {
   // ---- Auth ----
   async login(email: string, password: string): Promise<User> {
-    const tokens = await request<AuthTokens>("/api/auth/login", {
+    const res = await request<AuthResponse>("/api/auth/login", {
       method: "POST",
       body: JSON.stringify({ email, password }),
     });
-    setTokens(tokens);
-    return request<User>("/api/auth/me");
+    setTokens(res.tokens);
+    return mapUser(res.user);
   },
 
   async register(
@@ -106,12 +150,17 @@ export const apiClient = {
     password: string,
     displayName: string
   ): Promise<User> {
-    const tokens = await request<AuthTokens>("/api/auth/register", {
+    const res = await request<AuthResponse>("/api/auth/register", {
       method: "POST",
       body: JSON.stringify({ email, password, display_name: displayName }),
     });
-    setTokens(tokens);
-    return request<User>("/api/auth/me");
+    setTokens(res.tokens);
+    return mapUser(res.user);
+  },
+
+  async getMe(): Promise<User> {
+    const raw = await request<unknown>("/api/auth/me");
+    return mapUser(raw);
   },
 
   async refreshToken(): Promise<void> {
