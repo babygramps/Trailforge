@@ -350,36 +350,82 @@ export default function MapView() {
     }
   }, [layers]);
 
-  // Update live position
+  // Update live position with heading
   const updateLivePosition = useCallback(
-    (lat: number, lon: number) => {
+    (lat: number, lon: number, heading: number | null, accuracy: number) => {
       const map = mapRef.current;
       if (!map || !map.isStyleLoaded()) return;
 
       if (!positionMarkerRef.current) {
         const el = document.createElement("div");
         el.className = "live-position-marker";
-        el.style.width = "16px";
-        el.style.height = "16px";
-        el.style.borderRadius = "50%";
-        el.style.backgroundColor = "#2563eb";
-        el.style.border = "3px solid #ffffff";
-        el.style.boxShadow = "0 0 8px rgba(37,99,235,0.6)";
-        positionMarkerRef.current = new maplibregl.Marker({ element: el })
+        // Outer accuracy ring + inner dot + heading arrow
+        el.innerHTML = `
+          <div class="position-accuracy"></div>
+          <div class="position-dot"></div>
+          <div class="position-heading"></div>
+        `;
+        positionMarkerRef.current = new maplibregl.Marker({
+          element: el,
+          pitchAlignment: "map",
+          rotationAlignment: "map",
+        })
           .setLngLat([lon, lat])
           .addTo(map);
       } else {
         positionMarkerRef.current.setLngLat([lon, lat]);
       }
+
+      const el = positionMarkerRef.current.getElement();
+
+      // Update heading arrow visibility and rotation
+      const headingEl = el.querySelector(".position-heading") as HTMLElement;
+      if (headingEl) {
+        if (heading !== null && !isNaN(heading)) {
+          headingEl.style.display = "block";
+          headingEl.style.transform = `rotate(${heading}deg)`;
+        } else {
+          headingEl.style.display = "none";
+        }
+      }
+
+      // Scale accuracy ring relative to map (approximate)
+      const accEl = el.querySelector(".position-accuracy") as HTMLElement;
+      if (accEl && accuracy > 0) {
+        // Convert meters to pixels at current zoom
+        const metersPerPixel =
+          (40075016.686 * Math.cos((lat * Math.PI) / 180)) /
+          Math.pow(2, map.getZoom() + 8);
+        const radiusPx = Math.min(Math.max(accuracy / metersPerPixel, 12), 120);
+        accEl.style.width = `${radiusPx * 2}px`;
+        accEl.style.height = `${radiusPx * 2}px`;
+        accEl.style.display = accuracy > 10 ? "block" : "none";
+      }
     },
     []
   );
 
+  // Show live position with heading on the map (always, not just while recording)
   useEffect(() => {
-    (window as unknown as Record<string, unknown>).__updateMapPosition =
-      updateLivePosition;
+    if (!navigator.geolocation) return;
+
+    const watchId = navigator.geolocation.watchPosition(
+      (geo) => {
+        updateLivePosition(
+          geo.coords.latitude,
+          geo.coords.longitude,
+          geo.coords.heading,
+          geo.coords.accuracy
+        );
+      },
+      () => {
+        // Silently ignore — user may not have granted permission yet
+      },
+      { enableHighAccuracy: true, maximumAge: 3000, timeout: 15_000 }
+    );
+
     return () => {
-      delete (window as unknown as Record<string, unknown>).__updateMapPosition;
+      navigator.geolocation.clearWatch(watchId);
     };
   }, [updateLivePosition]);
 

@@ -1193,3 +1193,60 @@
 .waypoint-save-btn:disabled {
   opacity: 0.6;
 }
+
+/* ---- Live Position Marker ---- */
+.live-position-marker {
+  position: relative;
+  width: 24px;
+  height: 24px;
+}
+
+.position-dot {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 16px;
+  height: 16px;
+  transform: translate(-50%, -50%);
+  background: #2563eb;
+  border: 2.5px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 6px rgba(37, 99, 235, 0.5);
+  z-index: 2;
+}
+
+.position-heading {
+  display: none;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  margin-left: -7px;
+  margin-top: -32px;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-bottom: 20px solid #2563eb;
+  transform-origin: 7px 32px;
+  z-index: 1;
+  filter: drop-shadow(0 0 2px rgba(37, 99, 235, 0.4));
+}
+
+.position-accuracy {
+  display: none;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: rgba(37, 99, 235, 0.12);
+  border: 1px solid rgba(37, 99, 235, 0.25);
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Hide GeolocateControl default dot (we use our own) */
+.maplibregl-user-location-dot,
+.maplibregl-user-location-accuracy-circle {
+  display: none !important;
+}
