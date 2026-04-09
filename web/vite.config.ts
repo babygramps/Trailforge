@@ -13,7 +13,7 @@ export default defineConfig({
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
         runtimeCaching: [
           {
-            // Cache map tiles (vector + raster) with cache-first
+            // Cache map tiles from local proxy
             urlPattern: /\/(tiles|api\/proxy\/satellite)\//,
             handler: "CacheFirst",
             options: {
@@ -26,6 +26,22 @@ export default defineConfig({
                 statuses: [0, 200],
               },
               rangeRequests: true,
+            },
+          },
+          {
+            // Cache external raster tile servers (OSM, OpenTopo, CyclOSM, Waymarked)
+            urlPattern:
+              /^https:\/\/(?:[a-c]\.)?(?:tile\.opentopomap\.org|tile\.openstreetmap\.org|tile-cyclosm\.openstreetmap\.fr|tile\.waymarkedtrails\.org)\//,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "external-tiles",
+              expiration: {
+                maxEntries: 12000,
+                maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
             },
           },
           {

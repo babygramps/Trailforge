@@ -8,6 +8,8 @@ const TILE_CACHE = "map-tiles-v1";
 const API_CACHE = "api-cache-v1";
 
 const TILE_PATH_RE = /\/(tiles|api\/proxy\/satellite)\//;
+const EXTERNAL_TILE_RE =
+  /^https:\/\/(?:[a-c]\.)?(?:tile\.opentopomap\.org|tile\.openstreetmap\.org|tile-cyclosm\.openstreetmap\.fr|tile\.waymarkedtrails\.org)\//;
 
 const APP_SHELL_URLS = ["/", "/index.html", "/manifest.json"];
 
@@ -38,8 +40,11 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
 
-  // Tile requests: cache-first
-  if (TILE_PATH_RE.test(url.pathname)) {
+  // Tile requests: cache-first (local proxy + external tile servers)
+  if (
+    TILE_PATH_RE.test(url.pathname) ||
+    EXTERNAL_TILE_RE.test(event.request.url)
+  ) {
     event.respondWith(cacheFirst(event.request, TILE_CACHE));
     return;
   }

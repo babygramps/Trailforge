@@ -2,6 +2,44 @@ import { create } from "zustand";
 import type maplibregl from "maplibre-gl";
 import type { MapLayer, LayerPreset, RecordingSession } from "../types";
 
+// ---- Persist / restore last map view ----
+const VIEW_KEY = "tf_map_view";
+
+interface SavedView {
+  center: [number, number];
+  zoom: number;
+  bearing: number;
+  pitch: number;
+}
+
+function loadSavedView(): SavedView | null {
+  try {
+    const raw = localStorage.getItem(VIEW_KEY);
+    if (!raw) return null;
+    const v = JSON.parse(raw) as SavedView;
+    if (
+      Array.isArray(v.center) &&
+      v.center.length === 2 &&
+      typeof v.zoom === "number"
+    ) {
+      return v;
+    }
+  } catch {
+    // Corrupted — ignore
+  }
+  return null;
+}
+
+function persistView(v: SavedView) {
+  try {
+    localStorage.setItem(VIEW_KEY, JSON.stringify(v));
+  } catch {
+    // Storage full — ignore
+  }
+}
+
+const saved = loadSavedView();
+
 const DEFAULT_LAYERS: MapLayer[] = [
   // ---- Base maps (toggle one at a time, or blend) ----
   {
@@ -101,10 +139,10 @@ interface MapState {
 
 export const useMapStore = create<MapState>((set) => ({
   mapInstance: null,
-  center: [0, 20], // World fallback — overridden by geolocation on load
-  zoom: 2,
-  bearing: 0,
-  pitch: 0,
+  center: saved?.center ?? [0, 20],
+  zoom: saved?.zoom ?? 2,
+  bearing: saved?.bearing ?? 0,
+  pitch: saved?.pitch ?? 0,
   layers: DEFAULT_LAYERS,
   activePreset: null,
   selectedTrackId: null,
@@ -113,12 +151,32 @@ export const useMapStore = create<MapState>((set) => ({
   waypointDraft: null,
 
   setMapInstance: (map) => set({ mapInstance: map }),
-  setCenter: (center) => set({ center }),
-  setZoom: (zoom) => set({ zoom }),
-  setBearing: (bearing) => set({ bearing }),
-  setPitch: (pitch) => set({ pitch }),
+  setCenter: (center) =>
+    set((state) => {
+      persistView({ center, zoom: state.zoom, bearing: state.bearing, pitch: state.pitch });
+      return { center };
+    }),
+  setZoom: (zoom) =>
+    set((state) => {
+      persistView({ center: state.center, zoom, bearing: state.bearing, pitch: state.pitch });
+      return { zoom };
+    }),
+  setBearing: (bearing) =>
+    set((state) => {
+      persistView({ center: state.center, zoom: state.zoom, bearing, pitch: state.pitch });
+      return { bearing };
+    }),
+  setPitch: (pitch) =>
+    set((state) => {
+      persistView({ center: state.center, zoom: state.zoom, bearing: state.bearing, pitch });
+      return { pitch };
+    }),
 
-  setView: (center, zoom) => set({ center, zoom }),
+  setView: (center, zoom) =>
+    set((state) => {
+      persistView({ center, zoom, bearing: state.bearing, pitch: state.pitch });
+      return { center, zoom };
+    }),
 
   toggleLayerVisibility: (layerId) =>
     set((state) => ({

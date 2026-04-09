@@ -3,6 +3,7 @@ import maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useMapStore } from "../../stores/mapStore";
 import { apiClient } from "../../api/client";
+import { preseedTiles } from "../../lib/tilePreload";
 import type { Track, Waypoint } from "../../types";
 
 // Tile sources keyed by store layer ID.
@@ -266,18 +267,23 @@ export default function MapView() {
       loadTracks(map);
       loadWaypoints(map);
 
-      // Auto-locate: fly to user's position on first load
-      if (navigator.geolocation) {
+      // Auto-locate on first visit (no saved view) or if saved view
+      // is the world fallback (zoom <= 2).
+      // Auto-locate on first visit (no saved view) or if saved view
+      // is the world fallback (zoom <= 2).
+      const shouldAutoLocate = zoom <= 2;
+      if (shouldAutoLocate && navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (geo) => {
-            map.flyTo({
-              center: [geo.coords.longitude, geo.coords.latitude],
-              zoom: 14,
-              duration: 1200,
-            });
+            const lng = geo.coords.longitude;
+            const lat = geo.coords.latitude;
+            map.flyTo({ center: [lng, lat], zoom: 14, duration: 1200 });
+
+            // Pre-seed OSM tiles around user so the area works offline
+            preseedTiles(lng, lat).catch(() => {});
           },
           () => {
-            // Permission denied or unavailable — stay on default view
+            // Permission denied or unavailable — stay on default/saved view
           },
           { enableHighAccuracy: false, maximumAge: 60_000, timeout: 8_000 }
         );
