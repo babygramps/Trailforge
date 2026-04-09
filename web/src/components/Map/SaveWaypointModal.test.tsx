@@ -17,12 +17,23 @@ vi.mock("maplibre-gl", () => ({
   Map: vi.fn(),
 }));
 
-vi.mock("../../api/client", () => ({
-  apiClient: {
-    createWaypoint: vi.fn(() => Promise.resolve({ id: "wp_1" })),
-    getWaypoints: vi.fn(() => Promise.resolve([])),
-  },
-}));
+vi.mock("../../api/client", () => {
+  class ApiError extends Error {
+    status: number;
+    constructor(status: number, message: string) {
+      super(message);
+      this.status = status;
+      this.name = "ApiError";
+    }
+  }
+  return {
+    apiClient: {
+      createWaypoint: vi.fn(() => Promise.resolve({ id: "wp_1" })),
+      getWaypoints: vi.fn(() => Promise.resolve([])),
+    },
+    ApiError,
+  };
+});
 
 vi.mock("./MapView", () => ({
   loadWaypoints: vi.fn(() => Promise.resolve()),
@@ -153,6 +164,25 @@ describe("SaveWaypointModal", () => {
 
     await waitFor(() => {
       expect(loadWaypoints).toHaveBeenCalled();
+    });
+  });
+
+  it("shows friendly message when not signed in", async () => {
+    useMapStore.setState({ waypointDraft: { lng: -119.5, lat: 37.8 } });
+    const { apiClient } = await import("../../api/client");
+    const { ApiError } = await import("../../api/client");
+    (apiClient.createWaypoint as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+      new ApiError(401, '{"message":"missing authorization header"}')
+    );
+
+    const user = userEvent.setup();
+    render(<SaveWaypointModal />);
+
+    await user.type(screen.getByPlaceholderText("Waypoint name *"), "Test");
+    await user.click(screen.getByRole("button", { name: "Save Waypoint" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Sign in required to save waypoints")).toBeInTheDocument();
     });
   });
 });

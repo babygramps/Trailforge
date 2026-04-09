@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMapStore } from "../../stores/mapStore";
-import { apiClient } from "../../api/client";
+import { apiClient, ApiError } from "../../api/client";
 import { loadWaypoints } from "./MapView";
 
 const ICONS = [
@@ -74,7 +74,11 @@ export default function SaveWaypointModal() {
 
       cancel();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to save waypoint");
+      if (err instanceof ApiError && err.status === 401) {
+        setError("Sign in required to save waypoints");
+      } else {
+        setError(err instanceof Error ? err.message : "Failed to save waypoint");
+      }
     } finally {
       setSaving(false);
     }
