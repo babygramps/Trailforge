@@ -20,7 +20,6 @@ export default defineConfig({
               cacheName: "map-tiles",
               expiration: {
                 maxEntries: 8000,
-                maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
               },
               cacheableResponse: {
                 statuses: [0, 200],
@@ -36,8 +35,7 @@ export default defineConfig({
             options: {
               cacheName: "external-tiles",
               expiration: {
-                maxEntries: 12000,
-                maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
+                maxEntries: 20000,
               },
               cacheableResponse: {
                 statuses: [0, 200],

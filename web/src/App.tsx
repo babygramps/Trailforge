@@ -9,7 +9,9 @@ import LayerManager from "./components/Map/LayerManager";
 import LayerPresets from "./components/Map/LayerPresets";
 import MapSearch from "./components/Map/MapSearch";
 import SaveWaypointModal from "./components/Map/SaveWaypointModal";
+import OfflineDownload from "./components/Map/OfflineDownload";
 import GPSDiagnostics from "./components/Settings/GPSDiagnostics";
+import OfflineRegions from "./components/Settings/OfflineRegions";
 import { useAuthStore } from "./stores/authStore";
 import "./App.css";
 
@@ -48,6 +50,7 @@ function MapPage() {
       {sidebarOpen && (
         <div className="sidebar-backdrop" onClick={() => setSidebarOpen(false)} />
       )}
+      <OfflineDownload />
       <SaveWaypointModal />
     </div>
   );
@@ -97,12 +100,7 @@ function SettingsPage() {
 
       <GPSDiagnostics />
 
-      <div className="settings-section">
-        <h3>Offline Maps</h3>
-        <p className="settings-placeholder">
-          Download map regions for offline use.
-        </p>
-      </div>
+      <OfflineRegions />
       <div className="settings-section">
         <h3>About</h3>
         <p>TrailForge v0.1.0</p>

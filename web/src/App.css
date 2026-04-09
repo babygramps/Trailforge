@@ -1250,3 +1250,180 @@
 .maplibregl-user-location-accuracy-circle {
   display: none !important;
 }
+
+/* ---- Offline Download Button ---- */
+.offline-download-btn {
+  position: absolute;
+  top: 56px;
+  left: 10px;
+  z-index: 5;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.9);
+  color: #e2e8f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(4px);
+}
+
+@media (min-width: 768px) {
+  .offline-download-btn {
+    top: 10px;
+    left: 278px;
+  }
+}
+
+/* ---- Offline Toast ---- */
+.offline-toast {
+  position: absolute;
+  bottom: 80px;
+  left: 12px;
+  right: 12px;
+  z-index: 25;
+  background: rgba(15, 23, 42, 0.96);
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  max-width: 360px;
+}
+
+@media (min-width: 768px) {
+  .offline-toast {
+    left: auto;
+    right: 16px;
+    bottom: 40px;
+  }
+}
+
+.offline-toast-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin-bottom: 8px;
+}
+
+.offline-toast-name {
+  width: 100%;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #475569;
+  background: #1e293b;
+  color: #e2e8f0;
+  font-size: 0.82rem;
+  margin-bottom: 6px;
+}
+
+.offline-toast-info {
+  font-size: 0.78rem;
+  color: #94a3b8;
+  margin-bottom: 10px;
+}
+
+.offline-failed {
+  color: #fca5a5;
+}
+
+.offline-toast-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.offline-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.offline-btn.cancel {
+  background: #334155;
+  color: #e2e8f0;
+}
+
+.offline-btn.download {
+  background: #22c55e;
+  color: #0f172a;
+  flex: 1;
+}
+
+/* ---- Offline Progress Bar ---- */
+.offline-progress-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: #334155;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.offline-progress-fill {
+  height: 100%;
+  border-radius: 3px;
+  background: #22c55e;
+  transition: width 0.3s ease;
+}
+
+/* ---- Offline Regions (Settings) ---- */
+.offline-hint {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  margin-bottom: 8px;
+}
+
+.offline-storage {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-bottom: 10px;
+}
+
+.offline-regions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.offline-region-item {
+  display: flex;
+  align-items: center;
+  background: #1e293b;
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+
+.offline-region-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.offline-region-name {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #e2e8f0;
+}
+
+.offline-region-meta {
+  font-size: 0.72rem;
+  color: #64748b;
+}
+
+.offline-region-delete {
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  background: transparent;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+
+.offline-region-delete:hover {
+  background: #7f1d1d;
+  color: #fca5a5;
+}
