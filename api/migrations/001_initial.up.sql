@@ -1,12 +1,12 @@
--- Enable PostGIS extension for spatial data types and functions.
-CREATE EXTENSION IF NOT EXISTS postgis;
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+-- TrailForge schema — works on any PostgreSQL 13+ (no PostGIS required).
+-- Geometry is stored as GeoJSON inside JSONB columns; spatial queries
+-- happen client-side in MapLibre.  gen_random_uuid() is built-in since PG 13.
 
 -- ============================================================================
 -- Users
 -- ============================================================================
-CREATE TABLE users (
-    id           UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+CREATE TABLE IF NOT EXISTS users (
+    id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     email        TEXT NOT NULL UNIQUE,
     password_hash TEXT NOT NULL,
     display_name TEXT NOT NULL DEFAULT '',
@@ -14,37 +14,37 @@ CREATE TABLE users (
     updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_users_email ON users (email);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users (email);
 
 -- ============================================================================
--- Tracks – recorded GPS activities with PostGIS LineStringZ geometry
+-- Tracks – recorded GPS activities with GeoJSON geometry stored as JSONB
 -- ============================================================================
-CREATE TABLE tracks (
-    id            UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+CREATE TABLE IF NOT EXISTS tracks (
+    id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id       UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     name          TEXT NOT NULL,
     activity_type TEXT NOT NULL DEFAULT 'hike',
     description   TEXT NOT NULL DEFAULT '',
-    geometry      GEOMETRY(LineStringZ, 4326),
+    geometry      JSONB,
     stats         JSONB NOT NULL DEFAULT '{}',
     created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_tracks_user_id ON tracks (user_id);
-CREATE INDEX idx_tracks_activity ON tracks (activity_type);
-CREATE INDEX idx_tracks_geometry ON tracks USING GIST (geometry);
-CREATE INDEX idx_tracks_created ON tracks (created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_tracks_user_id ON tracks (user_id);
+CREATE INDEX IF NOT EXISTS idx_tracks_activity ON tracks (activity_type);
+CREATE INDEX IF NOT EXISTS idx_tracks_created ON tracks (created_at DESC);
 
 -- ============================================================================
--- Waypoints – named points of interest with PostGIS geography
+-- Waypoints – named points of interest with plain lat/lon columns
 -- ============================================================================
-CREATE TABLE waypoints (
-    id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+CREATE TABLE IF NOT EXISTS waypoints (
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id     UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     name        TEXT NOT NULL,
     description TEXT NOT NULL DEFAULT '',
-    location    GEOGRAPHY(Point, 4326) NOT NULL,
+    lat         DOUBLE PRECISION NOT NULL DEFAULT 0,
+    lon         DOUBLE PRECISION NOT NULL DEFAULT 0,
     ele         DOUBLE PRECISION NOT NULL DEFAULT 0,
     icon        TEXT NOT NULL DEFAULT 'marker',
     color       TEXT NOT NULL DEFAULT '#FF5722',
@@ -52,19 +52,18 @@ CREATE TABLE waypoints (
     updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_waypoints_user_id ON waypoints (user_id);
-CREATE INDEX idx_waypoints_location ON waypoints USING GIST (location);
+CREATE INDEX IF NOT EXISTS idx_waypoints_user_id ON waypoints (user_id);
 
 -- ============================================================================
--- Routes – planned routes with ordered waypoints
+-- Routes – planned routes with ordered waypoints, geometry as JSONB
 -- ============================================================================
-CREATE TABLE routes (
-    id                 UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+CREATE TABLE IF NOT EXISTS routes (
+    id                 UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id            UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     name               TEXT NOT NULL,
     activity_type      TEXT NOT NULL DEFAULT 'hike',
     description        TEXT NOT NULL DEFAULT '',
-    geometry           GEOMETRY(LineString, 4326),
+    geometry           JSONB,
     waypoints          JSONB NOT NULL DEFAULT '[]',
     total_distance     DOUBLE PRECISION NOT NULL DEFAULT 0,
     estimated_duration DOUBLE PRECISION NOT NULL DEFAULT 0,
@@ -72,14 +71,13 @@ CREATE TABLE routes (
     updated_at         TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_routes_user_id ON routes (user_id);
-CREATE INDEX idx_routes_geometry ON routes USING GIST (geometry);
+CREATE INDEX IF NOT EXISTS idx_routes_user_id ON routes (user_id);
 
 -- ============================================================================
--- Fitbit OAuth tokens – encrypted token storage for heart-rate integration
+-- Fitbit OAuth tokens
 -- ============================================================================
-CREATE TABLE fitbit_tokens (
-    id              UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+CREATE TABLE IF NOT EXISTS fitbit_tokens (
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id         UUID NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
     access_token    TEXT NOT NULL,
     refresh_token   TEXT NOT NULL,
@@ -91,4 +89,4 @@ CREATE TABLE fitbit_tokens (
     updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_fitbit_tokens_user_id ON fitbit_tokens (user_id);
+CREATE INDEX IF NOT EXISTS idx_fitbit_tokens_user_id ON fitbit_tokens (user_id);

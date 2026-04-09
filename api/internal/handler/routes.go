@@ -59,7 +59,7 @@ func (h *RouteHandler) Create(c echo.Context) error {
 
 	query := `
 		INSERT INTO routes (user_id, name, activity_type, description, geometry, waypoints, total_distance, estimated_duration)
-		VALUES ($1, $2, $3, $4, ST_SetSRID(ST_GeomFromGeoJSON($5), 4326), $6, $7, $8)
+		VALUES ($1, $2, $3, $4, $5::jsonb, $6::jsonb, $7, $8)
 		RETURNING id, created_at, updated_at`
 
 	route := &model.Route{
@@ -116,7 +116,7 @@ func (h *RouteHandler) List(c echo.Context) error {
 	query := `
 		SELECT
 			id, user_id, name, activity_type, description,
-			ST_AsGeoJSON(geometry)::jsonb,
+			geometry,
 			waypoints,
 			total_distance, estimated_duration,
 			created_at, updated_at
@@ -200,8 +200,8 @@ func (h *RouteHandler) Update(c echo.Context) error {
 	updateQuery := `
 		UPDATE routes
 		SET name = $2, activity_type = $3, description = $4,
-			geometry = ST_SetSRID(ST_GeomFromGeoJSON($5), 4326),
-			waypoints = $6, total_distance = $7, estimated_duration = $8,
+			geometry = $5::jsonb,
+			waypoints = $6::jsonb, total_distance = $7, estimated_duration = $8,
 			updated_at = NOW()
 		WHERE id = $1
 		RETURNING updated_at`
@@ -329,7 +329,7 @@ func (h *RouteHandler) getRoute(ctx context.Context, id string) (*model.Route, e
 	query := `
 		SELECT
 			id, user_id, name, activity_type, description,
-			ST_AsGeoJSON(geometry)::jsonb,
+			geometry,
 			waypoints,
 			total_distance, estimated_duration,
 			created_at, updated_at

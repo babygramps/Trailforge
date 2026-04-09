@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"sort"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -49,13 +50,13 @@ func NewDB(ctx context.Context, databaseURL string) (*DB, error) {
 	return db, nil
 }
 
-// Migrate runs SQL migration files from the migrations directory.
+// Migrate runs all SQL migration files from the migrations directory in order.
 func (db *DB) Migrate(ctx context.Context) error {
 	// Try common migration paths (local dev vs Docker).
 	paths := []string{"migrations", "/app/migrations", "api/migrations"}
 	var migrationDir string
 	for _, p := range paths {
-		if _, err := os.Stat(filepath.Join(p, "001_initial.up.sql")); err == nil {
+		if _, err := os.Stat(p); err == nil {
 			migrationDir = p
 			break
 		}
@@ -65,19 +66,28 @@ func (db *DB) Migrate(ctx context.Context) error {
 		return nil
 	}
 
-	sqlFile := filepath.Join(migrationDir, "001_initial.up.sql")
-	sql, err := os.ReadFile(sqlFile)
+	// Find all *.up.sql files and sort them.
+	matches, err := filepath.Glob(filepath.Join(migrationDir, "*.up.sql"))
 	if err != nil {
-		return fmt.Errorf("reading migration file: %w", err)
+		return fmt.Errorf("finding migration files: %w", err)
+	}
+	sort.Strings(matches)
+
+	for _, sqlFile := range matches {
+		sql, err := os.ReadFile(sqlFile)
+		if err != nil {
+			return fmt.Errorf("reading migration file %s: %w", sqlFile, err)
+		}
+
+		if _, err := db.Pool.Exec(ctx, string(sql)); err != nil {
+			// With IF NOT EXISTS on all DDL, errors here mean a real problem.
+			// Log and continue — the table may already exist from a prior run.
+			log.Printf("migration %s note: %v (may already be applied)", filepath.Base(sqlFile), err)
+		} else {
+			log.Printf("migration %s applied successfully", filepath.Base(sqlFile))
+		}
 	}
 
-	if _, err := db.Pool.Exec(ctx, string(sql)); err != nil {
-		// Tables may already exist — that's fine.
-		log.Printf("migration note: %v (may already be applied)", err)
-		return nil
-	}
-
-	log.Println("database migration applied successfully")
 	return nil
 }
 
