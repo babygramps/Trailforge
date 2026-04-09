@@ -137,13 +137,63 @@ export default function MapView() {
       setPitch(map.getPitch());
     });
 
-    // Long-press / right-click → open waypoint save form
+    // Right-click on desktop → open waypoint save form
     map.on("contextmenu", (e) => {
+      e.preventDefault();
       useMapStore.getState().setWaypointDraft({
         lng: e.lngLat.lng,
         lat: e.lngLat.lat,
       });
     });
+
+    // Long-press on mobile (touchstart/touchend/touchmove)
+    // The contextmenu event doesn't fire reliably on mobile browsers,
+    // so we detect a 600ms hold with minimal finger movement.
+    {
+      let lpTimer: ReturnType<typeof setTimeout> | null = null;
+      let startX = 0;
+      let startY = 0;
+      const HOLD_MS = 600;
+      const MOVE_THRESHOLD = 10; // px
+
+      const canvas = map.getCanvas();
+
+      canvas.addEventListener("touchstart", (e) => {
+        if (e.touches.length !== 1) { lpTimer && clearTimeout(lpTimer); lpTimer = null; return; }
+        const t = e.touches[0];
+        startX = t.clientX;
+        startY = t.clientY;
+        lpTimer = setTimeout(() => {
+          // Convert screen point to lngLat (unproject needs canvas-relative coords)
+          const rect = canvas.getBoundingClientRect();
+          const point = map.unproject([t.clientX - rect.left, t.clientY - rect.top]);
+          useMapStore.getState().setWaypointDraft({
+            lng: point.lng,
+            lat: point.lat,
+          });
+          lpTimer = null;
+        }, HOLD_MS);
+      }, { passive: true });
+
+      canvas.addEventListener("touchmove", (e) => {
+        if (!lpTimer) return;
+        const t = e.touches[0];
+        const dx = t.clientX - startX;
+        const dy = t.clientY - startY;
+        if (dx * dx + dy * dy > MOVE_THRESHOLD * MOVE_THRESHOLD) {
+          clearTimeout(lpTimer);
+          lpTimer = null;
+        }
+      }, { passive: true });
+
+      canvas.addEventListener("touchend", () => {
+        if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; }
+      }, { passive: true });
+
+      canvas.addEventListener("touchcancel", () => {
+        if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; }
+      }, { passive: true });
+    }
 
     map.on("load", () => {
       // User data sources
