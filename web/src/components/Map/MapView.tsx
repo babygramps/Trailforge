@@ -140,12 +140,17 @@ export default function MapView() {
       setPitch(map.getPitch());
     });
 
-    // Right-click on desktop / long-press on mobile → open waypoint save form.
-    // Must also prevent the native browser context menu so it doesn't steal focus.
+    // Right-click on desktop / long-press on mobile → open radial menu.
+    // Must also prevent the native browser context menu.
     map.on("contextmenu", (e) => {
       e.preventDefault();
       e.originalEvent.preventDefault();
-      useMapStore.getState().setWaypointDraft({
+      const store = useMapStore.getState();
+      // Close any existing popups first
+      store.setSelectedWaypoint(null);
+      store.openRadialMenu({
+        x: e.originalEvent.clientX,
+        y: e.originalEvent.clientY,
         lng: e.lngLat.lng,
         lat: e.lngLat.lat,
       });
@@ -153,8 +158,8 @@ export default function MapView() {
     // Belt-and-suspenders: block native context menu directly on the canvas
     map.getCanvas().addEventListener("contextmenu", (e) => e.preventDefault());
 
-    // Long-press on mobile (touchstart/touchend/touchmove)
-    // Provides a fallback for browsers where contextmenu doesn't fire on long-press.
+    // Long-press on mobile → open radial menu.
+    // Fallback for browsers where contextmenu doesn't fire on long-press.
     {
       let lpTimer: ReturnType<typeof setTimeout> | null = null;
       let startX = 0;
@@ -169,16 +174,14 @@ export default function MapView() {
         const t = e.touches[0];
         startX = t.clientX;
         startY = t.clientY;
-        // Snapshot coordinates immediately (Touch object may be recycled)
         const cx = t.clientX;
         const cy = t.clientY;
         lpTimer = setTimeout(() => {
           const rect = canvas.getBoundingClientRect();
           const point = map.unproject([cx - rect.left, cy - rect.top]);
-          useMapStore.getState().setWaypointDraft({
-            lng: point.lng,
-            lat: point.lat,
-          });
+          const store = useMapStore.getState();
+          store.setSelectedWaypoint(null);
+          store.openRadialMenu({ x: cx, y: cy, lng: point.lng, lat: point.lat });
           lpTimer = null;
         }, HOLD_MS);
       }, { passive: true });

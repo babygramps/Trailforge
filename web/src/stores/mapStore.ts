@@ -118,6 +118,15 @@ export interface SelectedWaypoint {
   color: string;
 }
 
+export interface RadialMenuState {
+  /** Screen-space position for the menu center */
+  x: number;
+  y: number;
+  /** Map coordinates at that point */
+  lng: number;
+  lat: number;
+}
+
 interface MapState {
   mapInstance: maplibregl.Map | null;
   center: [number, number];
@@ -128,6 +137,7 @@ interface MapState {
   activePreset: string | null;
   selectedTrackId: string | null;
   selectedWaypoint: SelectedWaypoint | null;
+  radialMenu: RadialMenuState | null;
   isRecording: boolean;
   recordingSession: RecordingSession | null;
   waypointDraft: WaypointDraft | null;
@@ -143,6 +153,8 @@ interface MapState {
   applyPreset: (preset: LayerPreset) => void;
   setSelectedTrack: (trackId: string | null) => void;
   setSelectedWaypoint: (wp: SelectedWaypoint | null) => void;
+  openRadialMenu: (state: RadialMenuState) => void;
+  closeRadialMenu: () => void;
   setRecording: (
     isRecording: boolean,
     session: RecordingSession | null
@@ -160,6 +172,7 @@ export const useMapStore = create<MapState>((set) => ({
   activePreset: null,
   selectedTrackId: null,
   selectedWaypoint: null,
+  radialMenu: null,
   isRecording: false,
   recordingSession: null,
   waypointDraft: null,
@@ -222,6 +235,8 @@ export const useMapStore = create<MapState>((set) => ({
 
   setSelectedTrack: (trackId) => set({ selectedTrackId: trackId }),
   setSelectedWaypoint: (wp) => set({ selectedWaypoint: wp }),
+  openRadialMenu: (state) => set({ radialMenu: state }),
+  closeRadialMenu: () => set({ radialMenu: null }),
 
   setRecording: (isRecording, session) =>
     set({ isRecording, recordingSession: session }),
