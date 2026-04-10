@@ -8,7 +8,6 @@ export default function MapFAB() {
   const mapInstance = useMapStore((s) => s.mapInstance);
   const radialMenu = useMapStore((s) => s.radialMenu);
   const openRadialMenu = useMapStore((s) => s.openRadialMenu);
-  const closeRadialMenu = useMapStore((s) => s.closeRadialMenu);
 
   if (radialMenu) return null; // hide FAB when menu is open
 
