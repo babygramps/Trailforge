@@ -243,6 +243,31 @@ export default function MapView() {
         filter: ["==", ["get", "id"], ""],
       });
 
+      // Register emoji icons as canvas-rendered images
+      // (MapLibre SDF fonts can't render emoji on mobile WebGL)
+      const WAYPOINT_ICONS: Record<string, string> = {
+        pin: "📍",
+        peak: "⛰️",
+        camp: "🏕️",
+        water: "💧",
+        viewpoint: "👁️",
+        danger: "⚠️",
+        food: "🍽️",
+        info: "ℹ️",
+      };
+      for (const [key, emoji] of Object.entries(WAYPOINT_ICONS)) {
+        const size = 48;
+        const canvas = document.createElement("canvas");
+        canvas.width = size;
+        canvas.height = size;
+        const ctx = canvas.getContext("2d")!;
+        ctx.font = `${size - 8}px sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(emoji, size / 2, size / 2);
+        map.addImage(`wp-${key}`, { width: size, height: size, data: new Uint8Array(ctx.getImageData(0, 0, size, size).data) });
+      }
+
       // Waypoint circles — background behind icon for visibility
       map.addLayer({
         id: "waypoints-circle",
@@ -257,30 +282,21 @@ export default function MapView() {
         },
       });
 
-      // Waypoint icon emoji — rendered as text on top of circle
+      // Waypoint icon — rendered as image on top of circle
       map.addLayer({
         id: "waypoints-icon",
         type: "symbol",
         source: "user-waypoints",
         layout: {
-          "text-field": [
-            "match",
-            ["get", "icon"],
-            "pin", "📍",
-            "peak", "⛰️",
-            "camp", "🏕️",
-            "water", "💧",
-            "viewpoint", "👁️",
-            "danger", "⚠️",
-            "food", "🍽️",
-            "info", "ℹ️",
-            "📍", // fallback
+          "icon-image": [
+            "concat",
+            "wp-",
+            ["coalesce", ["get", "icon"], "pin"],
           ],
-          "text-size": ["interpolate", ["linear"], ["zoom"], 6, 12, 14, 20],
-          "text-allow-overlap": true,
-          "text-ignore-placement": true,
+          "icon-size": ["interpolate", ["linear"], ["zoom"], 6, 0.4, 14, 0.7],
+          "icon-allow-overlap": true,
+          "icon-ignore-placement": true,
         },
-        paint: {},
       });
 
       // Waypoint labels (name below icon)
@@ -293,6 +309,7 @@ export default function MapView() {
           "text-offset": [0, 2],
           "text-size": 12,
           "text-anchor": "top",
+          "text-allow-overlap": false,
         },
         paint: {
           "text-color": "#1a1a2e",
