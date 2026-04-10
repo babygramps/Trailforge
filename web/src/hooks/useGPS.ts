@@ -75,8 +75,43 @@ export function useGPS(): UseGPSReturn {
   const prevPointRef = useRef<GPSPosition | null>(null);
   const totalDistanceRef = useRef(0);
   const elevationGainRef = useRef(0);
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
 
   const { setRecording } = useMapStore();
+
+  // Screen Wake Lock — keeps screen on so GPS stays active while recording.
+  // Without this, mobile OSes suspend the PWA when the screen turns off.
+  const acquireWakeLock = useCallback(async () => {
+    if (!("wakeLock" in navigator)) return;
+    try {
+      wakeLockRef.current = await navigator.wakeLock.request("screen");
+      wakeLockRef.current.addEventListener("release", () => {
+        wakeLockRef.current = null;
+      });
+    } catch {
+      // Wake lock request failed (e.g. low battery) — non-fatal
+    }
+  }, []);
+
+  const releaseWakeLock = useCallback(() => {
+    wakeLockRef.current?.release();
+    wakeLockRef.current = null;
+  }, []);
+
+  // Re-acquire wake lock when page becomes visible again (OS releases it on tab switch)
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      if (
+        document.visibilityState === "visible" &&
+        sessionRef.current?.state === "recording" &&
+        !wakeLockRef.current
+      ) {
+        acquireWakeLock();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+  }, [acquireWakeLock]);
 
   // Check for orphaned sessions on mount
   useEffect(() => {
@@ -199,6 +234,7 @@ export function useGPS(): UseGPSReturn {
     prevPointRef.current = null;
 
     saveSession(newSession);
+    acquireWakeLock();
 
     watchIdRef.current = navigator.geolocation.watchPosition(
       (geo) => {
@@ -245,7 +281,7 @@ export function useGPS(): UseGPSReturn {
     }, 1_000);
 
     setIsTracking(true);
-  }, [isTracking, saveCurrentPoint, setRecording]);
+  }, [isTracking, saveCurrentPoint, setRecording, acquireWakeLock]);
 
   const pauseTracking = useCallback(() => {
     if (!sessionRef.current) return;
@@ -271,8 +307,9 @@ export function useGPS(): UseGPSReturn {
     setSession(updated);
     setRecording(true, updated);
     saveSession(updated);
+    releaseWakeLock();
     setIsTracking(false);
-  }, [setRecording]);
+  }, [setRecording, releaseWakeLock]);
 
   const resumeTracking = useCallback(() => {
     if (!sessionRef.current || sessionRef.current.state !== "paused") return;
@@ -283,6 +320,7 @@ export function useGPS(): UseGPSReturn {
     };
     sessionRef.current = updated;
     setSession(updated);
+    acquireWakeLock();
     setRecording(true, updated);
     saveSession(updated);
 
@@ -319,7 +357,7 @@ export function useGPS(): UseGPSReturn {
     }, 1_000);
 
     setIsTracking(true);
-  }, [saveCurrentPoint, setRecording]);
+  }, [saveCurrentPoint, setRecording, acquireWakeLock]);
 
   const stopTracking = useCallback(async (): Promise<RecordingSession | null> => {
     // Flush any remaining point
@@ -352,13 +390,14 @@ export function useGPS(): UseGPSReturn {
     setSession(null);
     setIsTracking(false);
     setRecording(false, null);
+    releaseWakeLock();
     totalDistanceRef.current = 0;
     elevationGainRef.current = 0;
     prevPointRef.current = null;
     pendingPointRef.current = null;
 
     return finalSession;
-  }, [saveCurrentPoint, setRecording]);
+  }, [saveCurrentPoint, setRecording, releaseWakeLock]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -368,6 +407,7 @@ export function useGPS(): UseGPSReturn {
       }
       if (saveTimerRef.current) clearInterval(saveTimerRef.current);
       if (statsTimerRef.current) clearInterval(statsTimerRef.current);
+      wakeLockRef.current?.release();
     };
   }, []);
 
