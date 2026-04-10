@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useMemo } from "react";
 import { useMapStore } from "../../stores/mapStore";
 import {
   TILE_TEMPLATES,
@@ -10,15 +10,26 @@ import {
   type OfflineRegion,
 } from "../../lib/tilePreload";
 
-const DOWNLOAD_ZOOMS = [10, 11, 12, 13, 14, 15];
+const MIN_ZOOM = 6;
+const MAX_ZOOM = 17;
+const AVG_TILE_KB = 20; // average tile size estimate in KB
 
 type Stage = "idle" | "confirm" | "downloading" | "done" | "error";
+
+function formatSize(kb: number): string {
+  if (kb < 1024) return `${Math.round(kb)} KB`;
+  const mb = kb / 1024;
+  if (mb < 1024) return `${mb.toFixed(1)} MB`;
+  return `${(mb / 1024).toFixed(2)} GB`;
+}
 
 export default function OfflineDownload() {
   const [stage, setStage] = useState<Stage>("idle");
   const [progress, setProgress] = useState<DownloadProgress | null>(null);
-  const [tileCount, setTileCount] = useState(0);
   const [regionName, setRegionName] = useState("");
+  const [zoomMin, setZoomMin] = useState(10);
+  const [zoomMax, setZoomMax] = useState(15);
+  const [bounds, setBounds] = useState<{ w: number; s: number; e: number; n: number } | null>(null);
   const abortRef = useRef<AbortController | null>(null);
   const mapInstance = useMapStore((s) => s.mapInstance);
   const layers = useMapStore((s) => s.layers);
@@ -29,34 +40,38 @@ export default function OfflineDownload() {
         l.visible && l.type === "raster" && TILE_TEMPLATES[l.id] !== undefined
     ) ?? layers[0];
 
+  const zooms = useMemo(() => {
+    const arr: number[] = [];
+    for (let z = zoomMin; z <= zoomMax; z++) arr.push(z);
+    return arr;
+  }, [zoomMin, zoomMax]);
+
+  const tileCount = useMemo(() => {
+    if (!bounds) return 0;
+    return countTilesForBounds(bounds.w, bounds.s, bounds.e, bounds.n, zooms);
+  }, [bounds, zooms]);
+
+  const estimatedSize = useMemo(() => tileCount * AVG_TILE_KB, [tileCount]);
+
   const handleOpen = useCallback(() => {
     if (!mapInstance) return;
-    const bounds = mapInstance.getBounds();
-    const count = countTilesForBounds(
-      bounds.getWest(),
-      bounds.getSouth(),
-      bounds.getEast(),
-      bounds.getNorth(),
-      DOWNLOAD_ZOOMS
-    );
-    setTileCount(count);
+    const b = mapInstance.getBounds();
+    setBounds({ w: b.getWest(), s: b.getSouth(), e: b.getEast(), n: b.getNorth() });
     setRegionName("");
+    setZoomMin(10);
+    setZoomMax(15);
     setStage("confirm");
   }, [mapInstance]);
 
   const handleDownload = useCallback(async () => {
-    if (!mapInstance) return;
+    if (!mapInstance || !bounds) return;
 
-    const bounds = mapInstance.getBounds();
     const template =
       TILE_TEMPLATES[activeBaseLayer.id] ?? TILE_TEMPLATES["osm"];
 
     const urls = tileUrlsForBounds(
-      bounds.getWest(),
-      bounds.getSouth(),
-      bounds.getEast(),
-      bounds.getNorth(),
-      DOWNLOAD_ZOOMS,
+      bounds.w, bounds.s, bounds.e, bounds.n,
+      zooms,
       template
     );
 
@@ -79,13 +94,8 @@ export default function OfflineDownload() {
       const region: OfflineRegion = {
         id: crypto.randomUUID(),
         name: regionName || "Unnamed area",
-        bounds: {
-          west: bounds.getWest(),
-          south: bounds.getSouth(),
-          east: bounds.getEast(),
-          north: bounds.getNorth(),
-        },
-        zooms: DOWNLOAD_ZOOMS,
+        bounds: { west: bounds.w, south: bounds.s, east: bounds.e, north: bounds.n },
+        zooms,
         layerId: activeBaseLayer.id,
         tileCount: final.done - final.failed,
         savedAt: new Date().toISOString(),
@@ -95,7 +105,7 @@ export default function OfflineDownload() {
     } catch {
       if (!ac.signal.aborted) setStage("error");
     }
-  }, [mapInstance, activeBaseLayer, regionName]);
+  }, [mapInstance, bounds, activeBaseLayer, regionName, zooms]);
 
   const handleCancel = useCallback(() => {
     abortRef.current?.abort();
@@ -150,15 +160,58 @@ export default function OfflineDownload() {
             value={regionName}
             onChange={(e) => setRegionName(e.target.value)}
           />
-          <div className="offline-toast-info">
-            ~{tileCount.toLocaleString()} tiles from {activeBaseLayer.name} at
-            zoom 10–15
+
+          <div className="offline-zoom-controls">
+            <label className="offline-zoom-label">
+              <span>Min zoom</span>
+              <div className="offline-zoom-row">
+                <input
+                  type="range"
+                  min={MIN_ZOOM}
+                  max={zoomMax}
+                  value={zoomMin}
+                  onChange={(e) => setZoomMin(Number(e.target.value))}
+                  className="offline-zoom-slider"
+                />
+                <span className="offline-zoom-value">{zoomMin}</span>
+              </div>
+            </label>
+            <label className="offline-zoom-label">
+              <span>Max zoom</span>
+              <div className="offline-zoom-row">
+                <input
+                  type="range"
+                  min={zoomMin}
+                  max={MAX_ZOOM}
+                  value={zoomMax}
+                  onChange={(e) => setZoomMax(Number(e.target.value))}
+                  className="offline-zoom-slider"
+                />
+                <span className="offline-zoom-value">{zoomMax}</span>
+              </div>
+            </label>
           </div>
+
+          <div className="offline-toast-info">
+            ~{tileCount.toLocaleString()} tiles &middot; est.{" "}
+            {formatSize(estimatedSize)} &middot; {activeBaseLayer.name}
+          </div>
+
+          {tileCount > 50_000 && (
+            <div className="offline-toast-warn">
+              Large download — consider reducing zoom range or area
+            </div>
+          )}
+
           <div className="offline-toast-actions">
             <button className="offline-btn cancel" onClick={handleCancel}>
               Cancel
             </button>
-            <button className="offline-btn download" onClick={handleDownload}>
+            <button
+              className="offline-btn download"
+              onClick={handleDownload}
+              disabled={tileCount === 0}
+            >
               Download
             </button>
           </div>
@@ -173,6 +226,8 @@ export default function OfflineDownload() {
           </div>
           <div className="offline-toast-info">
             {progress?.done.toLocaleString()} / {progress?.total.toLocaleString()}
+            {" "}&middot; est. {formatSize((progress?.done ?? 0) * AVG_TILE_KB)} /{" "}
+            {formatSize((progress?.total ?? 0) * AVG_TILE_KB)}
             {progress && progress.failed > 0 && (
               <span className="offline-failed">
                 {" "}({progress.failed} failed)
@@ -189,7 +244,8 @@ export default function OfflineDownload() {
         <>
           <div className="offline-toast-title">Area saved!</div>
           <div className="offline-toast-info">
-            {(progress?.done ?? 0) - (progress?.failed ?? 0)} tiles cached.
+            {(progress?.done ?? 0) - (progress?.failed ?? 0)} tiles cached
+            (~{formatSize(((progress?.done ?? 0) - (progress?.failed ?? 0)) * AVG_TILE_KB)}).
             Manage in Settings.
           </div>
           <button className="offline-btn download" onClick={handleDismiss}>
