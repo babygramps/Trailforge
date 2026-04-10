@@ -243,39 +243,66 @@ export default function MapView() {
         filter: ["==", ["get", "id"], ""],
       });
 
-      // Waypoint circles — larger on mobile for tap targets
+      // Waypoint circles — background behind icon for visibility
       map.addLayer({
         id: "waypoints-circle",
         type: "circle",
         source: "user-waypoints",
         paint: {
-          "circle-radius": ["interpolate", ["linear"], ["zoom"], 6, 6, 14, 10],
+          "circle-radius": ["interpolate", ["linear"], ["zoom"], 6, 10, 14, 16],
           "circle-color": ["coalesce", ["get", "color"], "#e85d26"],
           "circle-stroke-width": 2,
           "circle-stroke-color": "#ffffff",
+          "circle-opacity": 0.85,
         },
       });
 
-      // Waypoint labels
+      // Waypoint icon emoji — rendered as text on top of circle
+      map.addLayer({
+        id: "waypoints-icon",
+        type: "symbol",
+        source: "user-waypoints",
+        layout: {
+          "text-field": [
+            "match",
+            ["get", "icon"],
+            "pin", "📍",
+            "peak", "⛰️",
+            "camp", "🏕️",
+            "water", "💧",
+            "viewpoint", "👁️",
+            "danger", "⚠️",
+            "food", "🍽️",
+            "info", "ℹ️",
+            "📍", // fallback
+          ],
+          "text-size": ["interpolate", ["linear"], ["zoom"], 6, 12, 14, 20],
+          "text-allow-overlap": true,
+          "text-ignore-placement": true,
+        },
+        paint: {},
+      });
+
+      // Waypoint labels (name below icon)
       map.addLayer({
         id: "waypoints-label",
         type: "symbol",
         source: "user-waypoints",
         layout: {
           "text-field": ["get", "name"],
-          "text-offset": [0, 1.5],
+          "text-offset": [0, 2],
           "text-size": 12,
           "text-anchor": "top",
         },
         paint: {
           "text-color": "#1a1a2e",
           "text-halo-color": "#ffffff",
-          "text-halo-width": 1,
+          "text-halo-width": 1.5,
         },
       });
 
       // Click/tap on waypoint → select it
-      const wpClickLayers = ["waypoints-circle", "waypoints-label"];
+      const wpClickLayers = ["waypoints-circle", "waypoints-icon", "waypoints-label"];
       for (const layerId of wpClickLayers) {
         map.on("click", layerId, (e) => {
           if (!e.features || e.features.length === 0) return;
@@ -413,6 +440,7 @@ export default function MapView() {
     if (wpLayer && map.getLayer("waypoints-circle")) {
       const vis = wpLayer.visible ? "visible" : "none";
       map.setLayoutProperty("waypoints-circle", "visibility", vis);
+      map.setLayoutProperty("waypoints-icon", "visibility", vis);
       map.setLayoutProperty("waypoints-label", "visibility", vis);
     }
   }, [layers]);
