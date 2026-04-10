@@ -8,7 +8,7 @@ COPY web/ .
 RUN npm run build
 
 # ---- Build API ----
-FROM golang:1.25-alpine AS api-builder
+FROM golang:1.24-alpine AS api-builder
 
 RUN apk add --no-cache git ca-certificates
 WORKDIR /build
