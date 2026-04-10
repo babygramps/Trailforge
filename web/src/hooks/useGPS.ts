@@ -29,9 +29,12 @@ interface UseGPSReturn {
   };
 }
 
-const ACCURACY_THRESHOLD = 30; // metres
-const SAVE_INTERVAL = 5_000; // ms
+const ACCURACY_THRESHOLD = 20; // metres — reject anything worse
+const MIN_DISTANCE = 3; // metres — ignore micro-movements (jitter)
+const MAX_SPEED_MPS = 50; // m/s (~180 km/h) — reject impossible jumps
+const SAVE_INTERVAL = 3_000; // ms
 const EARTH_RADIUS = 6_371_000; // metres
+const ELE_NOISE_THRESHOLD = 2; // metres — ignore tiny elevation changes (barometer noise)
 
 function haversineDistance(
   lat1: number,
@@ -101,6 +104,25 @@ export function useGPS(): UseGPSReturn {
     const sess = sessionRef.current;
     if (!pos || !sess || sess.state !== "recording") return;
 
+    // ---- Spike & jitter filters ----
+    const prev = prevPointRef.current;
+    if (prev) {
+      const d = haversineDistance(prev.lat, prev.lon, pos.lat, pos.lon);
+      const dt = (pos.timestamp - prev.timestamp) / 1000; // seconds
+
+      // Ignore micro-movements (GPS jitter while standing still)
+      if (d < MIN_DISTANCE) {
+        pendingPointRef.current = null;
+        return;
+      }
+
+      // Reject impossible speed spikes (GPS jump then snap back)
+      if (dt > 0 && d / dt > MAX_SPEED_MPS) {
+        pendingPointRef.current = null;
+        return;
+      }
+    }
+
     const point: GPSPoint = {
       id: generateId(),
       sessionId: sess.id,
@@ -117,21 +139,19 @@ export function useGPS(): UseGPSReturn {
       await savePoint(point);
 
       // Update distance / elevation
-      if (prevPointRef.current) {
-        const d = haversineDistance(
-          prevPointRef.current.lat,
-          prevPointRef.current.lon,
-          pos.lat,
-          pos.lon
-        );
+      if (prev) {
+        const d = haversineDistance(prev.lat, prev.lon, pos.lat, pos.lon);
         totalDistanceRef.current += d;
 
         if (
           pos.ele !== null &&
-          prevPointRef.current.ele !== null &&
-          pos.ele > prevPointRef.current.ele
+          prev.ele !== null
         ) {
-          elevationGainRef.current += pos.ele - prevPointRef.current.ele;
+          const eleDiff = pos.ele - prev.ele;
+          // Only count elevation change above noise threshold
+          if (eleDiff > ELE_NOISE_THRESHOLD) {
+            elevationGainRef.current += eleDiff;
+          }
         }
       }
       prevPointRef.current = pos;
